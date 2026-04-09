@@ -14,5 +14,12 @@
     "install": "^0.13.0",
     "nodemon": "^3.1.14",
     "npm": "^11.12.1"
+  },
+  "dependencies": {
+    "@google-cloud/documentai": "^9.6.0",
+    "@google-cloud/vision": "^5.3.5",
+    "jimp": "^1.6.1",
+    "sharp": "^0.34.5",
+    "tesseract.js": "^7.0.0"
   }
 }
