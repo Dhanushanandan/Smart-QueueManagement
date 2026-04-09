@@ -1,17 +1,17 @@
-import React, { useState } from "react";
+import { router } from "expo-router";
+import { reload, signInWithEmailAndPassword } from "firebase/auth";
+import { useState } from "react";
 import {
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
-  Image,
 } from "react-native";
-import { signInWithEmailAndPassword, reload } from "firebase/auth";
-import { auth } from "../services/firebaseAuth";
-import { router } from "expo-router";
 import { useTheme } from "../constants/useTheme";
+import { auth } from "../services/firebaseAuth";
 
 export default function LoginScreen() {
   const COLORS = useTheme();
@@ -19,7 +19,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const API_URL = "http://192.168.228.40:5000/api/auth";
+  const API_URL = "http://192.168.251.40:5000/api/auth";
 
   const handleLogin = async () => {
     if (email === "" || password === "") {
@@ -133,7 +133,7 @@ export default function LoginScreen() {
     logoImage: {
       width: 200,
       height: 120,
-      borderRadius: 10, 
+      borderRadius: 10,
       marginBottom: 15,
     },
     logo: {
@@ -227,9 +227,9 @@ export default function LoginScreen() {
         <Text style={styles.linkText}>Don’t have an account? Register</Text>
       </TouchableOpacity>
 
-      <Text style={styles.noteText}>
+      {/* <Text style={styles.noteText}>
         After clicking the verification link in your email, come back and login.
-      </Text>
+      </Text> */}
     </ScrollView>
   );
 }

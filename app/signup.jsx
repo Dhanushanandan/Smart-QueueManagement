@@ -1,20 +1,20 @@
-import React, { useState } from "react";
-import {
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
-} from "react-native";
+import { router } from "expo-router";
 import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
-  signOut,
 } from "firebase/auth";
-import { auth } from "../services/firebaseAuth";
-import { router } from "expo-router";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
 import { useTheme } from "../constants/useTheme";
+import { auth } from "../services/firebaseAuth";
 
 export default function SignupScreen() {
   const COLORS = useTheme();
@@ -26,16 +26,17 @@ export default function SignupScreen() {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const API_URL = "http://192.168.228.40:5000/api/auth";
+  const API_URL = "http://192.168.251.40:5000/api/auth";
 
   const handleSignup = async () => {
     if (
-      nic === "" ||
-      name === "" ||
-      dob === "" ||
-      email === "" ||
-      mobile === "" ||
+      nic.trim() === "" ||
+      name.trim() === "" ||
+      dob.trim() === "" ||
+      email.trim() === "" ||
+      mobile.trim() === "" ||
       password === "" ||
       confirmPassword === ""
     ) {
@@ -49,15 +50,17 @@ export default function SignupScreen() {
     }
 
     try {
+      setLoading(true);
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        email,
+        email.trim(),
         password,
       );
 
       await sendEmailVerification(userCredential.user);
 
-      const token = await userCredential.user.getIdToken();
+      const token = await userCredential.user.getIdToken(true);
 
       const response = await fetch(`${API_URL}/save-pending-user`, {
         method: "POST",
@@ -66,31 +69,36 @@ export default function SignupScreen() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          nic,
-          name,
-          dob,
-          email,
-          mobile,
+          nic: nic.trim(),
+          name: name.trim(),
+          dob: dob.trim(),
+          email: email.trim(),
+          mobile: mobile.trim(),
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        Alert.alert("Error", data.message);
+        Alert.alert("Error", data.message || "Failed to save pending user");
         return;
       }
 
-      await signOut(auth);
-
       Alert.alert(
-        "Verification Email Sent",
-        "Please check your email, click the verification link, and then login.",
+        "Success",
+        "Account created successfully. Now upload the birth certificate.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.push("/upload-certificate"),
+          },
+        ],
       );
-
-      router.push("/");
     } catch (error) {
-      Alert.alert("Signup Error", error.message);
+      console.log("Signup error:", error);
+      Alert.alert("Signup Error", error.message || "Network request failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,6 +138,11 @@ export default function SignupScreen() {
       marginBottom: 15,
       color: COLORS.text,
     },
+    linkText: {
+      marginTop: 20,
+      color: COLORS.secondary,
+      fontSize: 14,
+    },
     button: {
       width: "100%",
       height: 52,
@@ -143,11 +156,6 @@ export default function SignupScreen() {
       color: COLORS.white,
       fontSize: 18,
       fontWeight: "bold",
-    },
-    linkText: {
-      marginTop: 20,
-      color: COLORS.secondary,
-      fontSize: 14,
     },
   });
 
@@ -188,6 +196,7 @@ export default function SignupScreen() {
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
+        keyboardType="email-address"
       />
 
       <TextInput
@@ -196,6 +205,7 @@ export default function SignupScreen() {
         placeholderTextColor={COLORS.gray}
         value={mobile}
         onChangeText={setMobile}
+        keyboardType="phone-pad"
       />
 
       <TextInput
@@ -204,7 +214,7 @@ export default function SignupScreen() {
         placeholderTextColor={COLORS.gray}
         value={password}
         onChangeText={setPassword}
-        secureTextEntry={true}
+        secureTextEntry
       />
 
       <TextInput
@@ -213,11 +223,19 @@ export default function SignupScreen() {
         placeholderTextColor={COLORS.gray}
         value={confirmPassword}
         onChangeText={setConfirmPassword}
-        secureTextEntry={true}
+        secureTextEntry
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleSignup}>
-        <Text style={styles.buttonText}>Register</Text>
+      <TouchableOpacity
+        style={[styles.button, loading && { opacity: 0.7 }]}
+        onPress={handleSignup}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color={COLORS.white} />
+        ) : (
+          <Text style={styles.buttonText}>Register</Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.push("/login")}>
