@@ -233,28 +233,43 @@ export default function UploadCertificateScreen() {
   });
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Upload Birth Certificate</Text>
+    <ScrollView testID="uploadCertificateScreen" contentContainerStyle={styles.container}>
+      <Text testID="uploadCertificateTitle" style={styles.title}>
+        Upload Birth Certificate
+      </Text>
       <Text style={styles.text}>Upload clear certificate image</Text>
 
-      <TouchableOpacity style={styles.button} onPress={pickImage}>
+      <TouchableOpacity
+        testID="chooseImageButton"
+        style={styles.button}
+        onPress={pickImage}
+      >
         <Text style={styles.buttonText}>Choose Image</Text>
       </TouchableOpacity>
 
       {selectedImage && (
-        <Image source={{ uri: selectedImage.uri }} style={styles.image} />
+        <Image
+          testID="selectedCertificateImage"
+          source={{ uri: selectedImage.uri }}
+          style={styles.image}
+        />
       )}
 
-      <TouchableOpacity style={styles.button} onPress={handleUpload}>
+      <TouchableOpacity
+        testID="uploadExtractButton"
+        style={styles.button}
+        onPress={handleUpload}
+      >
         <Text style={styles.buttonText}>
           {loading ? "Processing..." : "Upload and Extract"}
         </Text>
       </TouchableOpacity>
 
       {showForm && (
-        <View style={styles.form}>
+        <View testID="certificateForm" style={styles.form}>
           <Text style={styles.label}>Name</Text>
           <TextInput
+            testID="certificateNameInput"
             style={styles.input}
             value={formData.name}
             onChangeText={(text) => handleChange("name", text)}
@@ -262,6 +277,7 @@ export default function UploadCertificateScreen() {
 
           <Text style={styles.label}>Date of Birth</Text>
           <TextInput
+            testID="certificateDobInput"
             style={styles.input}
             value={formData.dateOfBirth}
             onChangeText={(text) => handleChange("dateOfBirth", text)}
@@ -269,6 +285,7 @@ export default function UploadCertificateScreen() {
 
           <Text style={styles.label}>Serial No</Text>
           <TextInput
+            testID="certificateSerialNoInput"
             style={styles.input}
             value={formData.serialNo}
             onChangeText={(text) => handleChange("serialNo", text)}
@@ -276,6 +293,7 @@ export default function UploadCertificateScreen() {
 
           <Text style={styles.label}>Father Name</Text>
           <TextInput
+            testID="certificateFatherNameInput"
             style={styles.input}
             value={formData.fatherName}
             onChangeText={(text) => handleChange("fatherName", text)}
@@ -283,6 +301,7 @@ export default function UploadCertificateScreen() {
 
           <Text style={styles.label}>Mother Name</Text>
           <TextInput
+            testID="certificateMotherNameInput"
             style={styles.input}
             value={formData.motherName}
             onChangeText={(text) => handleChange("motherName", text)}
@@ -290,6 +309,7 @@ export default function UploadCertificateScreen() {
 
           <Text style={styles.label}>Place of Birth</Text>
           <TextInput
+            testID="certificatePlaceOfBirthInput"
             style={styles.input}
             value={formData.placeOfBirth}
             onChangeText={(text) => handleChange("placeOfBirth", text)}
@@ -297,6 +317,7 @@ export default function UploadCertificateScreen() {
 
           <Text style={styles.label}>District</Text>
           <TextInput
+            testID="certificateDistrictInput"
             style={styles.input}
             value={formData.district}
             onChangeText={(text) => handleChange("district", text)}
@@ -304,6 +325,7 @@ export default function UploadCertificateScreen() {
 
           <Text style={styles.label}>Sex</Text>
           <TextInput
+            testID="certificateSexInput"
             style={styles.input}
             value={formData.sex}
             onChangeText={(text) => handleChange("sex", text)}
@@ -311,13 +333,18 @@ export default function UploadCertificateScreen() {
 
           <Text style={styles.label}>Raw OCR Text</Text>
           <TextInput
+            testID="certificateRawTextInput"
             style={[styles.input, styles.textArea]}
             multiline
             value={formData.rawText}
             onChangeText={(text) => handleChange("rawText", text)}
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+          <TouchableOpacity
+            testID="submitCertificateButton"
+            style={styles.button}
+            onPress={handleSubmit}
+          >
             <Text style={styles.buttonText}>
               {loading ? "Saving..." : "Submit and Save"}
             </Text>

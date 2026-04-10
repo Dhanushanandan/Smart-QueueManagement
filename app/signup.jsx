@@ -160,12 +160,13 @@ export default function SignupScreen() {
   });
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.logo}>SmartQueue</Text>
-      <Text style={styles.title}>Register</Text>
+    <ScrollView testID="signupScreen" contentContainerStyle={styles.container}>
+      <Text testID="signupLogo" style={styles.logo}>SmartQueue</Text>
+      <Text testID="signupTitle" style={styles.title}>Register</Text>
       <Text style={styles.subtitle}>Create your account</Text>
 
       <TextInput
+        testID="nicInput"
         style={styles.input}
         placeholder="NIC Number"
         placeholderTextColor={COLORS.gray}
@@ -174,6 +175,7 @@ export default function SignupScreen() {
       />
 
       <TextInput
+        testID="nameInput"
         style={styles.input}
         placeholder="Full Name"
         placeholderTextColor={COLORS.gray}
@@ -182,6 +184,7 @@ export default function SignupScreen() {
       />
 
       <TextInput
+        testID="dobInput"
         style={styles.input}
         placeholder="Date of Birth"
         placeholderTextColor={COLORS.gray}
@@ -190,6 +193,7 @@ export default function SignupScreen() {
       />
 
       <TextInput
+        testID="emailInput"
         style={styles.input}
         placeholder="Email Address"
         placeholderTextColor={COLORS.gray}
@@ -200,6 +204,7 @@ export default function SignupScreen() {
       />
 
       <TextInput
+        testID="mobileInput"
         style={styles.input}
         placeholder="Mobile Number"
         placeholderTextColor={COLORS.gray}
@@ -209,6 +214,7 @@ export default function SignupScreen() {
       />
 
       <TextInput
+        testID="passwordInput"
         style={styles.input}
         placeholder="Password"
         placeholderTextColor={COLORS.gray}
@@ -218,6 +224,7 @@ export default function SignupScreen() {
       />
 
       <TextInput
+        testID="confirmPasswordInput"
         style={styles.input}
         placeholder="Confirm Password"
         placeholderTextColor={COLORS.gray}
@@ -227,18 +234,22 @@ export default function SignupScreen() {
       />
 
       <TouchableOpacity
+        testID="registerButton"
         style={[styles.button, loading && { opacity: 0.7 }]}
         onPress={handleSignup}
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color={COLORS.white} />
+          <ActivityIndicator testID="registerLoader" color={COLORS.white} />
         ) : (
           <Text style={styles.buttonText}>Register</Text>
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push("/login")}>
+      <TouchableOpacity
+        testID="backToLoginButton"
+        onPress={() => router.push("/login")}
+      >
         <Text style={styles.linkText}>Already have an account? Login</Text>
       </TouchableOpacity>
     </ScrollView>
