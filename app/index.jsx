@@ -14,7 +14,7 @@ export default function SplashScreen() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace("/login"); // 🔥 use lowercase
+      router.replace("/login");
     }, 2000);
 
     return () => clearTimeout(timer);
@@ -22,21 +22,24 @@ export default function SplashScreen() {
 
   return (
     <View
+      testID="splashScreen"
       style={[styles.container, { backgroundColor: COLORS.background }]}
     >
-      {/* 🔵 Circular Logo */}
       <Image
+        testID="splashLogoImage"
         source={require("../assets/images/Logo.png")}
         style={styles.logoImage}
       />
 
-      {/* App Name */}
-      <Text style={[styles.logoText, { color: COLORS.primary }]}>
+      <Text testID="splashLogo" style={[styles.logoText, { color: COLORS.primary }]}>
         SmartQueue
       </Text>
 
-      {/* Loader */}
-      <ActivityIndicator size="large" color={COLORS.primary} />
+      <ActivityIndicator
+        testID="splashLoader"
+        size="large"
+        color={COLORS.primary}
+      />
     </View>
   );
 }
@@ -48,11 +51,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // 🔵 Circular Image Style
   logoImage: {
     width: 200,
     height: 120,
-    borderRadius: 10, // makes it circle
+    borderRadius: 10,
     marginBottom: 15,
   },
 
