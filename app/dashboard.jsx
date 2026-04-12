@@ -18,8 +18,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
-import { Camera, CameraView } from "expo-camera";// import { DocumentPicker } from "expo-document-picker";
-import { auth } from "../services/firebaseAuth";
+import { Camera, CameraView } from "expo-camera";// import { auth } from "../services/firebaseAuth";
 import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
@@ -55,9 +54,6 @@ export default function UserDashboard() {
     preferredDate: "",
     preferredTime: ""
   });
-  
-  // Documents state
-  const [documents, setDocuments] = useState({});
   
   // Data states
   const [userData, setUserData] = useState({ name: "", memberType: "Premium Member", theme: "light" });
@@ -251,7 +247,7 @@ export default function UserDashboard() {
 
   // Create appointment
   const handleCreateAppointment = async () => {
-    if (!formData.fullName || !formData.email || !formData.phone) {
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.preferredDate || !formData.preferredTime) {
       Alert.alert("Missing Info", "Please fill all fields");
       return;
     }
@@ -263,15 +259,14 @@ export default function UserDashboard() {
         body: JSON.stringify({
           userId: userId,
           service: selectedService.id,
-          date: new Date().toISOString().split('T')[0], // Default date
-          time: "09:00 AM", // Default time
+          date: formData.preferredDate,
+          time: formData.preferredTime,
           serviceName: selectedService.name,
           estimatedTime: selectedService.time,
           fullName: formData.fullName,
           email: formData.email,
           phone: formData.phone,
           address: formData.address,
-          // documents: documents, // commented out
         }),
       });
       
@@ -289,7 +284,6 @@ export default function UserDashboard() {
           preferredDate: "",
           preferredTime: ""
         });
-        // setDocuments({}); // commented out
         fetchAppointments(userId);
         fetchNotifications(userId);
       }
@@ -297,23 +291,6 @@ export default function UserDashboard() {
       Alert.alert("Error", "Failed to book appointment");
     }
   };
-
-  // Pick document
-  // const pickDocument = async (key) => {
-  //   try {
-  //     const result = await DocumentPicker.getDocumentAsync({
-  //       type: '*/*',
-  //       copyToCacheDirectory: true,
-  //     });
-  //     if (result.type === 'success') {
-  //       setDocuments({ ...documents, [key]: result });
-  //       Alert.alert("Success", `${key} uploaded successfully`);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error picking document:", error);
-  //     Alert.alert("Error", "Failed to pick document");
-  //   }
-  // };
 
   // Handle QR Code - Open Camera
   const handleQRCode = async () => {
@@ -781,27 +758,31 @@ export default function UserDashboard() {
                 multiline
               />
               
-              {/* Document Uploads based on service - commented out for now */}
-              {/* {selectedService.id === "identity" && (
-                <TouchableOpacity onPress={() => pickDocument('birthCertificate')} style={[styles.uploadButton, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                  <Ionicons name="document" size={20} color={colors.text} />
-                  <Text style={[styles.uploadText, { color: colors.text }]}>{documents.birthCertificate ? 'Birth Certificate Selected' : 'Upload Birth Certificate'}</Text>
-                </TouchableOpacity>
-              )}
+              <Text style={[styles.formLabel, { color: colors.text }]}>Preferred Date *</Text>
+              <View style={styles.optionsGrid}>
+                {dateOptions.map(date => (
+                  <TouchableOpacity
+                    key={date}
+                    style={[styles.optionChip, formData.preferredDate === date && styles.optionChipSelected, { backgroundColor: colors.background }]}
+                    onPress={() => setFormData({ ...formData, preferredDate: date })}
+                  >
+                    <Text style={[styles.optionChipText, formData.preferredDate === date && styles.optionChipTextSelected, { color: colors.text }]}>{date}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               
-              {selectedService.id === "license" && (
-                <TouchableOpacity onPress={() => pickDocument('nicDocument')} style={[styles.uploadButton, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                  <Ionicons name="document" size={20} color={colors.text} />
-                  <Text style={[styles.uploadText, { color: colors.text }]}>{documents.nicDocument ? 'NIC Document Selected' : 'Upload NIC Document'}</Text>
-                </TouchableOpacity>
-              )}
-              
-              {selectedService.id === "passport" && (
-                <TouchableOpacity onPress={() => pickDocument('nicDocument')} style={[styles.uploadButton, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                  <Ionicons name="document" size={20} color={colors.text} />
-                  <Text style={[styles.uploadText, { color: colors.text }]}>{documents.nicDocument ? 'NIC Document Selected' : 'Upload NIC Document'}</Text>
-                </TouchableOpacity>
-              )} */}
+              <Text style={[styles.formLabel, { color: colors.text }]}>Preferred Time *</Text>
+              <View style={styles.optionsGrid}>
+                {timeOptions.map(time => (
+                  <TouchableOpacity
+                    key={time}
+                    style={[styles.optionChip, formData.preferredTime === time && styles.optionChipSelected, { backgroundColor: colors.background }]}
+                    onPress={() => setFormData({ ...formData, preferredTime: time })}
+                  >
+                    <Text style={[styles.optionChipText, formData.preferredTime === time && styles.optionChipTextSelected, { color: colors.text }]}>{time}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </ScrollView>
             
             <TouchableOpacity style={styles.nextButton} onPress={handleCreateAppointment}>
@@ -1139,8 +1120,6 @@ const styles = StyleSheet.create({
   nextButton: { marginTop: 20, borderRadius: 12, overflow: "hidden" },
   nextButtonGradient: { paddingVertical: 14, alignItems: "center" },
   nextButtonText: { fontSize: 16, fontWeight: "600", color: "#FFFFFF" },
-  uploadButton: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 8 },
-  uploadText: { marginLeft: 8, fontSize: 16 },
   cameraContainer: { height: 400, borderRadius: 12, overflow: "hidden", marginBottom: 16 },
   camera: { flex: 1 },
   qrHint: { textAlign: "center", fontSize: 12, marginTop: 8 },
