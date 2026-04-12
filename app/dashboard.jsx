@@ -75,10 +75,44 @@ export default function UserDashboard() {
   const eventSourceRef = useRef(null);
   let cameraRef = useRef(null);
 
-  // Available services - UPDATED: Removed Identity Card Renewal, Passport Application, Driver's License
-  // Keeping the service array for future services if needed
+  // Available services - 3 options: NIC, Passport, Driving License
   const services = [
-    // Services can be added here in the future
+    { 
+      id: "nic", 
+      name: "NIC Card", 
+      fullName: "National Identity Card",
+      icon: "card-outline", 
+      time: "15 mins", 
+      price: "Rs. 500", 
+      description: "Apply for new or replacement NIC",
+      requirements: ["Birth Certificate", "Residence Proof", "Previous NIC (if replacement)"],
+      fee: "Rs. 500",
+      validity: "10 years"
+    },
+    { 
+      id: "passport", 
+      name: "Passport", 
+      fullName: "Passport Application",
+      icon: "airplane-outline", 
+      time: "30 mins", 
+      price: "Rs. 2000", 
+      description: "New or renewal passport application",
+      requirements: ["NIC", "Birth Certificate", "Previous Passport", "Photos"],
+      fee: "Rs. 2000 (Normal) / Rs. 5000 (Urgent)",
+      validity: "5/10 years"
+    },
+    { 
+      id: "license", 
+      name: "Driving License", 
+      fullName: "Driver's License",
+      icon: "car-outline", 
+      time: "20 mins", 
+      price: "Rs. 1000", 
+      description: "Driver's license application or renewal",
+      requirements: ["NIC", "Medical Certificate", "Learning License", "Photos"],
+      fee: "Rs. 1000",
+      validity: "5 years"
+    },
   ];
 
   // Date options
@@ -199,7 +233,6 @@ export default function UserDashboard() {
       const response = await fetch(`${API_BASE_URL}/appointments/${uid}`);
       const result = await response.json();
       if (result.success) {
-        // Categorize appointments into upcoming and past
         const appointments = result.data || [];
         const now = new Date();
         
@@ -212,7 +245,6 @@ export default function UserDashboard() {
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
-      // Set default empty structure on error
       setBookingDetails({ upcoming: [], past: [] });
     }
   };
@@ -256,6 +288,13 @@ export default function UserDashboard() {
     }
   };
 
+  // Navigate to service-specific booking UI
+  const navigateToServiceBooking = (service) => {
+    setSelectedService(service);
+    setServiceTypeModalVisible(false);
+    setBookingFormVisible(true);
+  };
+
   // Create appointment
   const handleCreateAppointment = async () => {
     if (!formData.fullName || !formData.email || !formData.phone || !formData.preferredDate || !formData.preferredTime) {
@@ -270,20 +309,21 @@ export default function UserDashboard() {
         body: JSON.stringify({
           userId: userId,
           service: selectedService.id,
+          serviceName: selectedService.fullName,
           date: formData.preferredDate,
           time: formData.preferredTime,
-          serviceName: selectedService.name,
           estimatedTime: selectedService.time,
           fullName: formData.fullName,
           email: formData.email,
           phone: formData.phone,
           address: formData.address,
+          status: "upcoming"
         }),
       });
       
       const result = await response.json();
       if (result.success) {
-        Alert.alert("Success", "Appointment booked successfully!");
+        Alert.alert("Success", `${selectedService.name} appointment booked successfully!`);
         setBookingFormVisible(false);
         setServiceTypeModalVisible(false);
         setSelectedService(null);
@@ -297,9 +337,12 @@ export default function UserDashboard() {
         });
         fetchAppointments(userId);
         fetchNotifications(userId);
+      } else {
+        Alert.alert("Error", result.message || "Failed to book appointment");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to book appointment");
+      console.error("Error booking appointment:", error);
+      Alert.alert("Error", "Failed to book appointment. Please try again.");
     }
   };
 
@@ -327,10 +370,10 @@ export default function UserDashboard() {
       if (result.success && result.data.url) {
         Linking.openURL(result.data.url);
       } else {
-        Linking.openURL("https://www.google.com/maps/search/medical+facilities");
+        Linking.openURL("https://www.google.com/maps/search/government+offices+near+me");
       }
     } catch (error) {
-      Linking.openURL("https://www.google.com/maps/search/medical+facilities");
+      Linking.openURL("https://www.google.com/maps/search/government+offices+near+me");
     }
   };
 
@@ -509,7 +552,7 @@ export default function UserDashboard() {
                   <View style={styles.notificationDot} />
                   <View style={styles.notificationContent}>
                     <Text style={[styles.notificationText, { color: colors.text }]}>{notification.title}</Text>
-                    <Text style={[styles.notificationTime, { color: colors.textSecondary }]}>{new Date(notification.date).toLocaleDateString()}</Text>
+                    <Text style={[styles.notificationTime, { color: colors.textSecondary }]}>{new Date(notification.createdAt).toLocaleDateString()}</Text>
                   </View>
                 </TouchableOpacity>
               ))
@@ -654,9 +697,9 @@ export default function UserDashboard() {
         <LinearGradient colors={["#FFFFFF", "#F8FAFC"]} style={styles.nearbyCard}>
           <View style={styles.nearbyHeader}>
             <Text style={[styles.nearbyTitle, { color: colors.text }]}>Nearby Facilities</Text>
-            <MaterialCommunityIcons name="hospital-building" size={28} color="#1E3A8A" />
+            <MaterialCommunityIcons name="office-building" size={28} color="#1E3A8A" />
           </View>
-          <Text style={[styles.nearbyText, { color: colors.textSecondary }]}>Find hospitals, clinics, and pharmacies near you</Text>
+          <Text style={[styles.nearbyText, { color: colors.textSecondary }]}>Find government offices, service centers near you</Text>
           <TouchableOpacity style={styles.nearbyButton} onPress={handleNearbyFacilities}>
             <Text style={styles.nearbyButtonText}>Open Google Maps →</Text>
           </TouchableOpacity>
@@ -681,54 +724,49 @@ export default function UserDashboard() {
         </TouchableOpacity>
       </View>
 
-      {/* Service Type Modal - UPDATED: Shows empty state since services are removed */}
+      {/* Service Type Modal - 3 Services: NIC, Passport, Driving License */}
       <Modal visible={serviceTypeModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, styles.largeModal, { backgroundColor: colors.cardBackground }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Choose Service</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Select Service</Text>
               <TouchableOpacity onPress={() => setServiceTypeModalVisible(false)}>
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            <ScrollView>
-              {services.length > 0 ? (
-                services.map(service => (
-                  <TouchableOpacity
-                    key={service.id}
-                    style={[styles.serviceTypeItem, { backgroundColor: colors.background }, selectedService?.id === service.id && styles.serviceTypeSelected]}
-                    onPress={() => {
-                      setSelectedService(service);
-                      setServiceTypeModalVisible(false);
-                      setBookingFormVisible(true);
-                    }}
-                  >
-                    <View style={styles.serviceTypeIcon}>
-                      <Ionicons name={service.icon} size={28} color="#1E3A8A" />
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {services.map(service => (
+                <TouchableOpacity
+                  key={service.id}
+                  style={[styles.serviceTypeItem, { backgroundColor: colors.background }]}
+                  onPress={() => navigateToServiceBooking(service)}
+                >
+                  <LinearGradient colors={["#EFF6FF", "#DBEAFE"]} style={styles.serviceTypeIcon}>
+                    <Ionicons name={service.icon} size={28} color="#1E3A8A" />
+                  </LinearGradient>
+                  <View style={styles.serviceTypeInfo}>
+                    <Text style={[styles.serviceTypeName, { color: colors.text }]}>{service.name}</Text>
+                    <Text style={[styles.serviceTypeDesc, { color: colors.textSecondary }]}>{service.description}</Text>
+                    <View style={styles.serviceMetaRow}>
+                      <View style={styles.serviceMeta}>
+                        <Ionicons name="time-outline" size={12} color="#1E3A8A" />
+                        <Text style={styles.serviceMetaText}>{service.time}</Text>
+                      </View>
+                      <View style={styles.serviceMeta}>
+                        <Ionicons name="cash-outline" size={12} color="#1E3A8A" />
+                        <Text style={styles.serviceMetaText}>{service.price}</Text>
+                      </View>
                     </View>
-                    <View style={styles.serviceTypeInfo}>
-                      <Text style={[styles.serviceTypeName, { color: colors.text }]}>{service.name}</Text>
-                      <Text style={[styles.serviceTypeTime, { color: colors.textSecondary }]}>{service.time} • {service.price}</Text>
-                      <Text style={[styles.serviceTypeDesc, { color: colors.textSecondary }]}>{service.description}</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <View style={styles.emptyServicesContainer}>
-                  <Ionicons name="construct-outline" size={64} color={colors.textSecondary} />
-                  <Text style={[styles.emptyServicesTitle, { color: colors.text }]}>No Services Available</Text>
-                  <Text style={[styles.emptyServicesText, { color: colors.textSecondary }]}>
-                    New services will be added soon. Please check back later.
-                  </Text>
-                </View>
-              )}
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              ))}
             </ScrollView>
           </View>
         </View>
       </Modal>
 
-      {/* Booking Form Modal */}
+      {/* Booking Form Modal - Individual Service Booking UI */}
       <Modal visible={bookingFormVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, styles.largeModal, { backgroundColor: colors.cardBackground }]}>
@@ -739,7 +777,40 @@ export default function UserDashboard() {
               </TouchableOpacity>
             </View>
             
-            <ScrollView style={styles.formContainer}>
+            <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
+              {/* Service Information Card */}
+              <LinearGradient colors={["#EFF6FF", "#DBEAFE"]} style={styles.serviceInfoCard}>
+                <View style={styles.serviceInfoHeader}>
+                  <Ionicons name={selectedService?.icon} size={32} color="#1E3A8A" />
+                  <Text style={styles.serviceInfoTitle}>{selectedService?.fullName}</Text>
+                </View>
+                <View style={styles.serviceInfoDetails}>
+                  <View style={styles.serviceInfoRow}>
+                    <Text style={styles.serviceInfoLabel}>Processing Time:</Text>
+                    <Text style={styles.serviceInfoValue}>{selectedService?.time}</Text>
+                  </View>
+                  <View style={styles.serviceInfoRow}>
+                    <Text style={styles.serviceInfoLabel}>Fee:</Text>
+                    <Text style={styles.serviceInfoValue}>{selectedService?.fee}</Text>
+                  </View>
+                  <View style={styles.serviceInfoRow}>
+                    <Text style={styles.serviceInfoLabel}>Validity:</Text>
+                    <Text style={styles.serviceInfoValue}>{selectedService?.validity}</Text>
+                  </View>
+                </View>
+              </LinearGradient>
+
+              {/* Requirements Section */}
+              <View style={styles.requirementsSection}>
+                <Text style={[styles.requirementsTitle, { color: colors.text }]}>Required Documents:</Text>
+                {selectedService?.requirements.map((req, index) => (
+                  <View key={index} style={styles.requirementItem}>
+                    <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                    <Text style={[styles.requirementText, { color: colors.textSecondary }]}>{req}</Text>
+                  </View>
+                ))}
+              </View>
+
               <Text style={[styles.formLabel, { color: colors.text }]}>Full Name *</Text>
               <TextInput
                 style={[styles.formInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
@@ -894,11 +965,11 @@ export default function UserDashboard() {
                     <Ionicons name="calendar" size={20} color="#1E3A8A" />
                   </View>
                   <View style={styles.bookingInfo}>
-                    <Text style={[styles.bookingService, { color: colors.text }]}>{booking.service}</Text>
+                    <Text style={[styles.bookingService, { color: colors.text }]}>{booking.serviceName || booking.service}</Text>
                     <Text style={[styles.bookingDateTime, { color: colors.textSecondary }]}>{booking.date} at {booking.time}</Text>
                   </View>
-                  <View style={[styles.bookingStatus, booking.status === "Confirmed" && styles.statusConfirmed]}>
-                    <Text style={styles.bookingStatusText}>{booking.status}</Text>
+                  <View style={[styles.bookingStatus, booking.status === "confirmed" && styles.statusConfirmed]}>
+                    <Text style={styles.bookingStatusText}>{booking.status || "Pending"}</Text>
                   </View>
                 </View>
               ))}
@@ -1124,15 +1195,24 @@ const styles = StyleSheet.create({
   modalConfirm: { backgroundColor: "#1E3A8A" },
   modalConfirmText: { color: "#FFFFFF", fontWeight: "600" },
   serviceTypeItem: { flexDirection: "row", alignItems: "center", borderRadius: 12, padding: 14, marginBottom: 10 },
-  serviceTypeSelected: { backgroundColor: "#EFF6FF", borderWidth: 1, borderColor: "#1E3A8A" },
-  serviceTypeIcon: { width: 50, height: 50, borderRadius: 25, backgroundColor: "#EFF6FF", justifyContent: "center", alignItems: "center", marginRight: 14 },
+  serviceTypeIcon: { width: 50, height: 50, borderRadius: 25, justifyContent: "center", alignItems: "center", marginRight: 14 },
   serviceTypeInfo: { flex: 1 },
-  serviceTypeName: { fontSize: 14, fontWeight: "600" },
-  serviceTypeTime: { fontSize: 11, marginTop: 2 },
-  serviceTypeDesc: { fontSize: 10, marginTop: 2 },
-  emptyServicesContainer: { alignItems: "center", justifyContent: "center", paddingVertical: 60, paddingHorizontal: 20 },
-  emptyServicesTitle: { fontSize: 18, fontWeight: "700", marginTop: 16, marginBottom: 8 },
-  emptyServicesText: { fontSize: 14, textAlign: "center", lineHeight: 20 },
+  serviceTypeName: { fontSize: 16, fontWeight: "600", marginBottom: 2 },
+  serviceTypeDesc: { fontSize: 12, marginBottom: 6 },
+  serviceMetaRow: { flexDirection: "row", gap: 12, marginTop: 4 },
+  serviceMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
+  serviceMetaText: { fontSize: 10, color: "#1E3A8A", fontWeight: "500" },
+  serviceInfoCard: { borderRadius: 12, padding: 16, marginBottom: 16 },
+  serviceInfoHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  serviceInfoTitle: { fontSize: 16, fontWeight: "700", color: "#1E3A8A", flex: 1 },
+  serviceInfoDetails: { gap: 8 },
+  serviceInfoRow: { flexDirection: "row", justifyContent: "space-between" },
+  serviceInfoLabel: { fontSize: 12, color: "#64748B" },
+  serviceInfoValue: { fontSize: 12, fontWeight: "600", color: "#1E3A8A" },
+  requirementsSection: { backgroundColor: "#F0FDF4", borderRadius: 12, padding: 12, marginBottom: 16 },
+  requirementsTitle: { fontSize: 14, fontWeight: "600", marginBottom: 8 },
+  requirementItem: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
+  requirementText: { fontSize: 12 },
   formContainer: { maxHeight: 500 },
   formLabel: { fontSize: 14, fontWeight: "600", marginTop: 12, marginBottom: 8 },
   formInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 16, marginBottom: 8 },
@@ -1163,9 +1243,9 @@ const styles = StyleSheet.create({
   bookingInfo: { flex: 1 },
   bookingService: { fontSize: 14, fontWeight: "600" },
   bookingDateTime: { fontSize: 12, marginTop: 2 },
-  bookingStatus: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  bookingStatus: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: "#FEF3C7" },
   statusConfirmed: { backgroundColor: "#D1FAE5" },
-  bookingStatusText: { fontSize: 10, fontWeight: "600" },
+  bookingStatusText: { fontSize: 10, fontWeight: "600", color: "#92400E" },
   cancelButton: { marginTop: 16, paddingVertical: 12, alignItems: "center", backgroundColor: "#F1F5F9", borderRadius: 12 },
   cancelButtonText: { fontSize: 14, fontWeight: "500", color: "#64748B" },
   settingItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 16, borderBottomWidth: 1 },

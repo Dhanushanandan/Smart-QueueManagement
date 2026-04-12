@@ -19,7 +19,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
- const API_URL = "http://192.168.1.65:5000/api";
+ const API_URL = "http://192.168.1.65:5000/api/auth";
 
  
   const handleLogin = async () => {
@@ -66,7 +66,7 @@ export default function LoginScreen() {
       // already in users node
       if (checkData.inUsers) {
         Alert.alert("Success", "Login successful");
-        router.push("/dashboard");
+        router.replace("/dashboard");
         return;
       }
 
@@ -88,7 +88,7 @@ export default function LoginScreen() {
         }
 
         Alert.alert("Success", "Login successful");
-        router.push("/dashboard");
+        router.replace("/dashboard");
         return;
       }
 
