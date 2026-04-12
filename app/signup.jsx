@@ -27,7 +27,7 @@ export default function SignupScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const API_URL = "http://192.168.228.40:5000/api/auth";
+  const API_URL = "http://192.168.1.65:5000/api/auth";
 
   const handleSignup = async () => {
     if (
