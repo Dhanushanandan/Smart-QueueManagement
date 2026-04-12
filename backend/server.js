@@ -2,527 +2,323 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const admin = require("firebase-admin");
+const serviceAccount = require("./serviceAccountKey.json");
+
+// 🔥 ROUTES
+const authRoutes = require("./routes/authRoutes");
 
 dotenv.config();
 
-// Initialize Firebase Admin
+// ============================================
+// FIREBASE INIT (Realtime DB)
+// ============================================
+
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL:
+      "https://smartqueuemanagement-5fa87-default-rtdb.asia-southeast1.firebasedatabase.app",
   });
 }
 
-const db = admin.firestore();
+const db = admin.database();
+
 const app = express();
+
+// ============================================
+// MIDDLEWARE
+// ============================================
 
 app.use(cors());
 app.use(express.json());
 
-// Root route
-app.get('/', (req, res) => {
-  res.json({ 
-    message: "SmartQueue API Server is running!",
-    endpoints: [
-      "GET  /api/user/:email",
-      "POST /api/user",
-      "PUT  /api/user/:userId",
-      "GET  /api/announcements",
-      "GET  /api/service-arrangements",
-      "GET  /api/queue/:userId",
-      "POST /api/queue/refresh/:userId",
-      "GET  /api/appointments/:userId",
-      "POST /api/appointments",
-      "GET  /api/notifications/:userId",
-      "PUT  /api/notifications/:userId/:notificationId",
-      "GET  /api/nearby-facilities",
-      "GET  /api/stats/:userId"
-    ]
-  });
+// ============================================
+// ROUTES (OPTION 1 CLEAN STRUCTURE)
+// ============================================
+
+// Auth routes
+app.use("/api/auth", authRoutes);
+
+// ============================================
+// ROOT
+// ============================================
+
+app.get("/", (req, res) => {
+  res.json({ message: "SmartQueue API Running 🚀" });
 });
 
 // ============================================
-// USER ROUTES
+// USERS
 // ============================================
 
-app.get('/api/user/:email', async (req, res) => {
+app.get("/api/user/:email", async (req, res) => {
   try {
-    const { email } = req.params;
-    const snapshot = await db.collection("users")
-      .where("email", "==", email)
-      .limit(1)
-      .get();
+    const snapshot = await db
+      .ref("users")
+      .orderByChild("email")
+      .equalTo(req.params.email)
+      .once("value");
 
-    if (snapshot.empty) {
+    if (!snapshot.exists()) {
       return res.json({ success: false, message: "User not found" });
     }
 
-    const userData = {
-      id: snapshot.docs[0].id,
-      ...snapshot.docs[0].data()
-    };
-
-    res.json({ success: true, data: userData });
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.post('/api/user', async (req, res) => {
-  try {
-    const userData = req.body;
-    const userRef = db.collection("users").doc(userData.userId);
-    
-    const newUser = {
-      userId: userData.userId,
-      name: userData.name || "User",
-      email: userData.email,
-      memberType: userData.memberType || "Standard Member",
-      theme: userData.theme || "light",
-      notifications: userData.notifications !== undefined ? userData.notifications : true,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-
-    await userRef.set(newUser);
-    
-    res.json({ success: true, data: newUser });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.put('/api/user/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const updates = req.body;
-    
-    await db.collection("users").doc(userId).update({
-      ...updates,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-
-    res.json({ success: true, message: "User updated" });
-  } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ============================================
-// STATS ROUTE
-// ============================================
-
-app.get('/api/stats/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    // Get waiting count (upcoming appointments)
-    const waitingSnap = await db.collection("appointments")
-      .where("status", "in", ["upcoming", "pending", "confirmed"])
-      .get();
-    const waiting = waitingSnap.size;
-
-    // Get completed count for this user
-    const completedSnap = await db.collection("appointments")
-      .where("userId", "==", userId)
-      .where("status", "==", "completed")
-      .get();
-    const completed = completedSnap.size;
-
-    // Calculate satisfaction from feedback
-    const feedbackSnap = await db.collection("feedback")
-      .where("userId", "==", userId)
-      .get();
-
-    let totalRating = 0;
-    let ratingCount = 0;
-
-    feedbackSnap.forEach(doc => {
-      const rating = doc.data().rating;
-      if (rating) {
-        totalRating += rating;
-        ratingCount++;
-      }
-    });
-
-    const satisfaction = ratingCount > 0 
-      ? Math.round((totalRating / (ratingCount * 5)) * 100)
-      : 98; // Default if no feedback
+    const data = snapshot.val();
+    const userId = Object.keys(data)[0];
 
     res.json({
       success: true,
-      data: { waiting, completed, satisfaction }
+      data: { userId, ...data[userId] },
     });
-  } catch (error) {
-    console.error('Error fetching stats:', error);
-    res.status(500).json({ success: false, error: error.message });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// ============================================
-// ANNOUNCEMENTS ROUTES
-// ============================================
-
-app.get('/api/announcements', async (req, res) => {
+app.post("/api/user", async (req, res) => {
   try {
-    const snapshot = await db.collection("announcements")
-      .where("active", "==", true)
-      .orderBy("createdAt", "desc")
-      .limit(5)
-      .get();
+    const user = req.body;
 
-    const announcements = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    res.json({ success: true, data: announcements });
-  } catch (error) {
-    console.error('Error fetching announcements:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ============================================
-// SERVICE ARRANGEMENTS ROUTES
-// ============================================
-
-app.get('/api/service-arrangements', async (req, res) => {
-  try {
-    const snapshot = await db.collection("serviceArrangements")
-      .where("active", "==", true)
-      .orderBy("order")
-      .get();
-
-    const arrangements = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    res.json({ success: true, data: arrangements });
-  } catch (error) {
-    console.error('Error fetching service arrangements:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ============================================
-// QUEUE ROUTES
-// ============================================
-
-app.get('/api/queue/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    // Get all upcoming appointments ordered by creation time
-    const snapshot = await db.collection("appointments")
-      .where("status", "in", ["upcoming", "pending", "confirmed", "processing"])
-      .orderBy("createdAt")
-      .get();
-
-    let position = 0;
-    let totalWaiting = 0;
-    let found = false;
-    let userAppointment = null;
-    let currentNumber = "A-000";
-
-    const appointments = [];
-    snapshot.forEach(doc => {
-      const data = { id: doc.id, ...doc.data() };
-      appointments.push(data);
-      
-      if (data.userId === userId) {
-        found = true;
-        userAppointment = data;
-        position = totalWaiting + 1;
-      }
-      
-      if (data.status !== "completed" && data.status !== "cancelled") {
-        totalWaiting++;
-      }
+    await db.ref("users/" + user.userId).set({
+      ...user,
+      createdAt: Date.now(),
     });
 
-    // Get average service time
-    const queueDoc = await db.collection("settings").doc("queue").get();
-    const avgServiceTime = queueDoc.exists ? queueDoc.data().avgServiceTime || 10 : 10;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
-    // Calculate estimated time
-    const estimatedMinutes = position * avgServiceTime;
-    const estimatedTime = estimatedMinutes < 60 
-      ? `${estimatedMinutes} mins`
-      : `${Math.floor(estimatedMinutes / 60)}h ${estimatedMinutes % 60}m`;
+app.put("/api/user/:userId", async (req, res) => {
+  try {
+    await db.ref("users/" + req.params.userId).update({
+      ...req.body,
+      updatedAt: Date.now(),
+    });
 
-    // Get current serving number
-    if (appointments.length > 0 && appointments[0].status === "processing") {
-      currentNumber = appointments[0].queueNumber || "A-001";
-    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+});
 
-    const queueData = {
-      position: found ? position : 0,
-      estimatedTime,
-      serviceName: userAppointment?.serviceName || "No Active Service",
-      status: userAppointment?.status || "inactive",
-      currentNumber,
-      totalWaiting: Math.max(0, totalWaiting - 1),
-      connectionId: userId,
-      avgServiceTime
+// ============================================
+// APPOINTMENTS
+// ============================================
+
+app.post("/api/appointments", async (req, res) => {
+  try {
+    const snapshot = await db.ref("appointments").once("value");
+    const count = Object.keys(snapshot.val() || {}).length;
+
+    const queueNumber = `A-${String(count + 1).padStart(3, "0")}`;
+
+    const newAppointment = {
+      ...req.body,
+      queueNumber,
+      status: "upcoming",
+      createdAt: Date.now(),
     };
 
-    res.json({ success: true, data: queueData });
-  } catch (error) {
-    console.error('Error fetching queue:', error);
-    res.status(500).json({ success: false, error: error.message });
+    const ref = db.ref("appointments").push();
+    await ref.set(newAppointment);
+
+    res.json({
+      success: true,
+      id: ref.key,
+      data: newAppointment,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false });
   }
 });
 
-app.post('/api/queue/refresh/:userId', async (req, res) => {
+app.get("/api/appointments/:userId", async (req, res) => {
   try {
-    const { userId } = req.params;
-    
-    // Return fresh queue data
-    const snapshot = await db.collection("appointments")
-      .where("status", "in", ["upcoming", "pending", "confirmed", "processing"])
-      .orderBy("createdAt")
-      .get();
+    const snapshot = await db.ref("appointments").once("value");
+    const data = snapshot.val() || {};
+
+    const result = Object.entries(data)
+      .map(([id, value]) => ({ id, ...value }))
+      .filter((a) => a.userId === req.params.userId);
+
+    res.json({ success: true, data: result });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+});
+
+// ============================================
+// QUEUE
+// ============================================
+
+app.get("/api/queue/:userId", async (req, res) => {
+  try {
+    const snapshot = await db.ref("appointments").once("value");
+    const data = snapshot.val() || {};
+
+    const list = Object.entries(data)
+      .map(([id, v]) => ({ id, ...v }))
+      .filter((a) =>
+        ["upcoming", "pending", "confirmed", "processing"].includes(a.status)
+      )
+      .sort((a, b) => a.createdAt - b.createdAt);
 
     let position = 0;
-    let totalWaiting = 0;
-    let userAppointment = null;
 
-    snapshot.forEach(doc => {
-      const data = { id: doc.id, ...doc.data() };
-      
-      if (data.userId === userId) {
-        userAppointment = data;
-        position = totalWaiting + 1;
-      }
-      
-      if (data.status !== "completed" && data.status !== "cancelled") {
-        totalWaiting++;
+    list.forEach((item, index) => {
+      if (item.userId === req.params.userId) {
+        position = index + 1;
       }
     });
-
-    const queueDoc = await db.collection("settings").doc("queue").get();
-    const avgServiceTime = queueDoc.exists ? queueDoc.data().avgServiceTime || 10 : 10;
-
-    const estimatedMinutes = position * avgServiceTime;
-    const estimatedTime = estimatedMinutes < 60 
-      ? `${estimatedMinutes} mins`
-      : `${Math.floor(estimatedMinutes / 60)}h ${estimatedMinutes % 60}m`;
 
     res.json({
       success: true,
       data: {
         position,
-        estimatedTime,
-        serviceName: userAppointment?.serviceName || "No Active Service",
-        status: userAppointment?.status || "inactive",
-        totalWaiting: Math.max(0, totalWaiting - 1),
-        avgServiceTime
-      }
+        totalWaiting: list.length,
+      },
     });
-  } catch (error) {
-    console.error('Error refreshing queue:', error);
-    res.status(500).json({ success: false, error: error.message });
+  } catch (err) {
+    res.status(500).json({ success: false });
   }
 });
 
-// SSE Stream for real-time updates
-app.get('/api/queue/stream/:userId', async (req, res) => {
-  const { userId } = req.params;
-  
+// ============================================
+// SSE STREAM
+// ============================================
+
+app.get("/api/queue/stream/:userId", (req, res) => {
+  const userId = req.params.userId;
+
   res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
   });
 
-  // Send initial data
-  const sendQueueUpdate = async () => {
-    try {
-      const snapshot = await db.collection("appointments")
-        .where("status", "in", ["upcoming", "pending", "confirmed", "processing"])
-        .orderBy("createdAt")
-        .get();
+  const ref = db.ref("appointments");
 
-      let position = 0;
-      let totalWaiting = 0;
-      let userAppointment = null;
+  const listener = ref.on("value", (snapshot) => {
+    const data = snapshot.val() || {};
 
-      snapshot.forEach(doc => {
-        const data = { id: doc.id, ...doc.data() };
-        
-        if (data.userId === userId) {
-          userAppointment = data;
-          position = totalWaiting + 1;
-        }
-        
-        if (data.status !== "completed" && data.status !== "cancelled") {
-          totalWaiting++;
-        }
-      });
+    const list = Object.values(data);
 
-      const queueDoc = await db.collection("settings").doc("queue").get();
-      const avgServiceTime = queueDoc.exists ? queueDoc.data().avgServiceTime || 10 : 10;
+    let position = 0;
 
-      const estimatedMinutes = position * avgServiceTime;
-      const estimatedTime = estimatedMinutes < 60 
-        ? `${estimatedMinutes} mins`
-        : `${Math.floor(estimatedMinutes / 60)}h ${estimatedMinutes % 60}m`;
-
-      const data = {
-        position,
-        estimatedTime,
-        serviceName: userAppointment?.serviceName || "No Active Service",
-        status: userAppointment?.status || "inactive",
-        totalWaiting: Math.max(0, totalWaiting - 1),
-        timestamp: Date.now()
-      };
-
-      res.write(`data: ${JSON.stringify(data)}\n\n`);
-    } catch (error) {
-      console.error('SSE error:', error);
-    }
-  };
-
-  await sendQueueUpdate();
-  
-  const interval = setInterval(sendQueueUpdate, 10000);
-  
-  // Listen for Firestore changes
-  const unsubscribe = db.collection("appointments")
-    .where("status", "in", ["upcoming", "pending", "confirmed", "processing"])
-    .onSnapshot(async () => {
-      await sendQueueUpdate();
-    });
-
-  req.on('close', () => {
-    clearInterval(interval);
-    unsubscribe();
-  });
-});
-
-// ============================================
-// APPOINTMENTS ROUTES
-// ============================================
-
-app.get('/api/appointments/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    const snapshot = await db.collection("appointments")
-      .where("userId", "==", userId)
-      .orderBy("createdAt", "desc")
-      .get();
-
-    const upcoming = [];
-    const past = [];
-
-    snapshot.forEach(doc => {
-      const data = { id: doc.id, ...doc.data() };
-      
-      if (data.status === "completed" || data.status === "cancelled") {
-        past.push(data);
-      } else {
-        upcoming.push(data);
+    list.forEach((item, index) => {
+      if (item.userId === userId) {
+        position = index + 1;
       }
     });
 
-    res.json({ success: true, data: { upcoming, past } });
-  } catch (error) {
-    console.error('Error fetching appointments:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+    res.write(`data: ${JSON.stringify({ position })}\n\n`);
+  });
+
+  req.on("close", () => {
+    ref.off("value", listener);
+  });
 });
 
-app.post('/api/appointments', async (req, res) => {
+// ============================================
+// ANNOUNCEMENTS
+// ============================================
+
+app.get("/api/announcements", async (req, res) => {
   try {
-    const appointmentData = req.body;
+    // Dummy announcements data
+    const announcements = [
+      {
+        id: 1,
+        title: "New Service Available",
+        description: "We have added new services to our platform. Check them out!",
+        icon: "megaphone-outline",
+        color: "#1E3A8A"
+      },
+      {
+        id: 2,
+        title: "System Maintenance",
+        description: "Scheduled maintenance on Sunday 2AM-4AM. Service may be unavailable.",
+        icon: "construct-outline",
+        color: "#EF4444"
+      }
+    ];
 
-    // Generate queue number
-    const queueSnapshot = await db.collection("appointments")
-      .where("status", "in", ["upcoming", "pending", "confirmed", "processing"])
-      .get();
-    
-    const queueNumber = `A-${String(queueSnapshot.size + 1).padStart(3, '0')}`;
-
-    const newAppointment = {
-      ...appointmentData,
-      queueNumber,
-      status: "upcoming",
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-
-    const docRef = await db.collection("appointments").add(newAppointment);
-
-    // Create notification
-    await db.collection("notifications").add({
-      userId: appointmentData.userId,
-      title: "Appointment Confirmed",
-      message: `Your ${appointmentData.serviceName} appointment is confirmed. Queue number: ${queueNumber}`,
-      type: "appointment",
-      read: false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-
-    res.json({ 
-      success: true, 
-      id: docRef.id,
-      data: { ...newAppointment, id: docRef.id }
-    });
-  } catch (error) {
-    console.error('Error creating appointment:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.json({ success: true, data: announcements });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // ============================================
-// NOTIFICATIONS ROUTES
+// SERVICE ARRANGEMENTS
 // ============================================
 
-app.get('/api/notifications/:userId', async (req, res) => {
+app.get("/api/service-arrangements", async (req, res) => {
   try {
-    const { userId } = req.params;
+    // Dummy service arrangements data
+    const serviceArrangements = [
+      {
+        id: 1,
+        title: "Priority Queue",
+        description: "Get served faster with our priority queue service.",
+        icon: "fast-forward",
+        color: "#10B981"
+      },
+      {
+        id: 2,
+        title: "Virtual Assistant",
+        description: "Get help from our virtual assistant for any queries.",
+        icon: "chatbubble-ellipses-outline",
+        color: "#3B82F6"
+      }
+    ];
 
-    const snapshot = await db.collection("notifications")
-      .where("userId", "==", userId)
-      .orderBy("createdAt", "desc")
-      .limit(20)
-      .get();
+    res.json({ success: true, data: serviceArrangements });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
-    const notifications = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.() || new Date()
-    }));
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+app.get("/api/notifications/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Dummy notifications data
+    const notifications = [
+      {
+        id: 1,
+        title: "Appointment Confirmed",
+        message: "Your appointment has been confirmed.",
+        date: new Date().toISOString(),
+        read: false
+      },
+      {
+        id: 2,
+        title: "Queue Update",
+        message: "Your position in the queue has changed.",
+        date: new Date().toISOString(),
+        read: true
+      }
+    ];
 
     res.json({ success: true, data: notifications });
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
-    res.status(500).json({ success: false, error: error.message });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.put('/api/notifications/:userId/:notificationId', async (req, res) => {
+app.put("/api/notifications/:userId/:notificationId", async (req, res) => {
   try {
-    const { notificationId } = req.params;
-
-    await db.collection("notifications").doc(notificationId).update({
-      read: true,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-
+    // Mark notification as read
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error updating notification:', error);
-    res.status(500).json({ success: false, error: error.message });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -530,17 +326,66 @@ app.put('/api/notifications/:userId/:notificationId', async (req, res) => {
 // NEARBY FACILITIES
 // ============================================
 
-app.get('/api/nearby-facilities', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      url: "https://www.google.com/maps/search/hospitals+clinics+pharmacies+near+me"
-    }
-  });
+app.get("/api/nearby-facilities", async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      url: "https://www.google.com/maps/search/medical+facilities"
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
+
+// ============================================
+// QUEUE REFRESH
+// ============================================
+
+app.post("/api/queue/refresh/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    const snapshot = await db.ref("appointments").once("value");
+    const data = snapshot.val() || {};
+
+    const list = Object.entries(data)
+      .map(([id, v]) => ({ id, ...v }))
+      .filter((a) =>
+        ["upcoming", "pending", "confirmed", "processing"].includes(a.status)
+      )
+      .sort((a, b) => a.createdAt - b.createdAt);
+
+    let position = 0;
+
+    list.forEach((item, index) => {
+      if (item.userId === userId) {
+        position = index + 1;
+      }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        position,
+        estimatedTime: `${position * 5} mins`,
+        connectionId: "",
+        serviceName: "General Service",
+        status: "processing",
+        currentNumber: "A-000",
+        totalWaiting: list.length
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ============================================
+// SERVER START
+// ============================================
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server running on port ${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ SmartQueue API Running on port ${PORT}`);
 });
