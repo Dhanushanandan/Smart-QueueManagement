@@ -18,7 +18,8 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
-import { Camera, CameraView } from "expo-camera";// import { auth } from "../services/firebaseAuth";
+import { Camera, CameraView } from "expo-camera";
+import { auth } from "../services/firebaseAuth";
 import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
@@ -74,11 +75,10 @@ export default function UserDashboard() {
   const eventSourceRef = useRef(null);
   let cameraRef = useRef(null);
 
-  // Available services
+  // Available services - UPDATED: Removed Identity Card Renewal, Passport Application, Driver's License
+  // Keeping the service array for future services if needed
   const services = [
-    { id: "identity", name: "Identity Card Renewal", icon: "card-outline", time: "15 mins", price: "Rs. 500", description: "Renew your national identity card" },
-    { id: "passport", name: "Passport Application", icon: "airplane-outline", time: "30 mins", price: "Rs. 2000", description: "New or renewal passport application" },
-    { id: "license", name: "Driver's License", icon: "car-outline", time: "20 mins", price: "Rs. 1000", description: "Driver's license application or renewal" },
+    // Services can be added here in the future
   ];
 
   // Date options
@@ -199,10 +199,21 @@ export default function UserDashboard() {
       const response = await fetch(`${API_BASE_URL}/appointments/${uid}`);
       const result = await response.json();
       if (result.success) {
-        setBookingDetails(result.data);
+        // Categorize appointments into upcoming and past
+        const appointments = result.data || [];
+        const now = new Date();
+        
+        const categorized = {
+          upcoming: appointments.filter(apt => apt.status === 'upcoming' || apt.status === 'pending' || apt.status === 'confirmed'),
+          past: appointments.filter(apt => apt.status === 'completed' || apt.status === 'cancelled')
+        };
+        
+        setBookingDetails(categorized);
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
+      // Set default empty structure on error
+      setBookingDetails({ upcoming: [], past: [] });
     }
   };
 
@@ -522,7 +533,7 @@ export default function UserDashboard() {
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.cardBackground }]}>
             <Ionicons name="checkmark-done-circle" size={20} color="#1E3A8A" />
-            <Text style={[styles.statCardNumber, { color: colors.text }]}>{bookingDetails.past.length}</Text>
+            <Text style={[styles.statCardNumber, { color: colors.text }]}>{bookingDetails.past?.length || 0}</Text>
             <Text style={[styles.statCardLabel, { color: colors.textSecondary }]}>Completed</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.cardBackground }]}>
@@ -670,7 +681,7 @@ export default function UserDashboard() {
         </TouchableOpacity>
       </View>
 
-      {/* Service Type Modal */}
+      {/* Service Type Modal - UPDATED: Shows empty state since services are removed */}
       <Modal visible={serviceTypeModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, styles.largeModal, { backgroundColor: colors.cardBackground }]}>
@@ -681,27 +692,37 @@ export default function UserDashboard() {
               </TouchableOpacity>
             </View>
             <ScrollView>
-              {services.map(service => (
-                <TouchableOpacity
-                  key={service.id}
-                  style={[styles.serviceTypeItem, { backgroundColor: colors.background }, selectedService?.id === service.id && styles.serviceTypeSelected]}
-                  onPress={() => {
-                    setSelectedService(service);
-                    setServiceTypeModalVisible(false);
-                    setBookingFormVisible(true);
-                  }}
-                >
-                  <View style={styles.serviceTypeIcon}>
-                    <Ionicons name={service.icon} size={28} color="#1E3A8A" />
-                  </View>
-                  <View style={styles.serviceTypeInfo}>
-                    <Text style={[styles.serviceTypeName, { color: colors.text }]}>{service.name}</Text>
-                    <Text style={[styles.serviceTypeTime, { color: colors.textSecondary }]}>{service.time} • {service.price}</Text>
-                    <Text style={[styles.serviceTypeDesc, { color: colors.textSecondary }]}>{service.description}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-              ))}
+              {services.length > 0 ? (
+                services.map(service => (
+                  <TouchableOpacity
+                    key={service.id}
+                    style={[styles.serviceTypeItem, { backgroundColor: colors.background }, selectedService?.id === service.id && styles.serviceTypeSelected]}
+                    onPress={() => {
+                      setSelectedService(service);
+                      setServiceTypeModalVisible(false);
+                      setBookingFormVisible(true);
+                    }}
+                  >
+                    <View style={styles.serviceTypeIcon}>
+                      <Ionicons name={service.icon} size={28} color="#1E3A8A" />
+                    </View>
+                    <View style={styles.serviceTypeInfo}>
+                      <Text style={[styles.serviceTypeName, { color: colors.text }]}>{service.name}</Text>
+                      <Text style={[styles.serviceTypeTime, { color: colors.textSecondary }]}>{service.time} • {service.price}</Text>
+                      <Text style={[styles.serviceTypeDesc, { color: colors.textSecondary }]}>{service.description}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={styles.emptyServicesContainer}>
+                  <Ionicons name="construct-outline" size={64} color={colors.textSecondary} />
+                  <Text style={[styles.emptyServicesTitle, { color: colors.text }]}>No Services Available</Text>
+                  <Text style={[styles.emptyServicesText, { color: colors.textSecondary }]}>
+                    New services will be added soon. Please check back later.
+                  </Text>
+                </View>
+              )}
             </ScrollView>
           </View>
         </View>
@@ -860,14 +881,14 @@ export default function UserDashboard() {
             </View>
             <View style={styles.tabBar}>
               <TouchableOpacity style={[styles.tab, activeBookingTab === "upcoming" && styles.activeTab]} onPress={() => setActiveBookingTab("upcoming")}>
-                <Text style={[styles.tabText, activeBookingTab === "upcoming" && styles.activeTabText]}>Upcoming ({bookingDetails.upcoming.length})</Text>
+                <Text style={[styles.tabText, activeBookingTab === "upcoming" && styles.activeTabText]}>Upcoming ({bookingDetails.upcoming?.length || 0})</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.tab, activeBookingTab === "past" && styles.activeTab]} onPress={() => setActiveBookingTab("past")}>
-                <Text style={[styles.tabText, activeBookingTab === "past" && styles.activeTabText]}>Past ({bookingDetails.past.length})</Text>
+                <Text style={[styles.tabText, activeBookingTab === "past" && styles.activeTabText]}>Past ({bookingDetails.past?.length || 0})</Text>
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.bookingList}>
-              {(activeBookingTab === "upcoming" ? bookingDetails.upcoming : bookingDetails.past).map(booking => (
+              {(activeBookingTab === "upcoming" ? (bookingDetails.upcoming || []) : (bookingDetails.past || [])).map(booking => (
                 <View key={booking.id} style={[styles.bookingItem, { backgroundColor: colors.background }]}>
                   <View style={styles.bookingIcon}>
                     <Ionicons name="calendar" size={20} color="#1E3A8A" />
@@ -1109,6 +1130,9 @@ const styles = StyleSheet.create({
   serviceTypeName: { fontSize: 14, fontWeight: "600" },
   serviceTypeTime: { fontSize: 11, marginTop: 2 },
   serviceTypeDesc: { fontSize: 10, marginTop: 2 },
+  emptyServicesContainer: { alignItems: "center", justifyContent: "center", paddingVertical: 60, paddingHorizontal: 20 },
+  emptyServicesTitle: { fontSize: 18, fontWeight: "700", marginTop: 16, marginBottom: 8 },
+  emptyServicesText: { fontSize: 14, textAlign: "center", lineHeight: 20 },
   formContainer: { maxHeight: 500 },
   formLabel: { fontSize: 14, fontWeight: "600", marginTop: 12, marginBottom: 8 },
   formInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 16, marginBottom: 8 },
