@@ -1,194 +1,111 @@
-const admin = require("../firebaseAdmin");
+const admin = require("firebase-admin");
+const db = admin.database();
 
-// ============================================
+// ==============================
 // SAVE PENDING USER
-// ============================================
-
+// ==============================
 exports.savePendingUser = async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
+    const { email, userId } = req.body;
 
-    if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "No token provided" });
+    if (!email || !userId) {
+      return res.status(400).json({ success: false, message: "Missing data" });
     }
 
-    const idToken = authHeader.split("Bearer ")[1];
-    const { uid } = await admin.auth().verifyIdToken(idToken);
-
-    const { nic, name, dob, email, mobile } = req.body;
-
-    if (!nic || !name || !dob || !email || !mobile) {
-      return res.status(400).json({ message: "Please fill all fields" });
-    }
-
-    const ref = admin.database().ref(`pendingUsers/${uid}`);
-
-    // 🔥 Prevent overwrite if already exists
-    const snapshot = await ref.once("value");
-    if (snapshot.exists()) {
-      return res.status(400).json({ message: "User already pending" });
-    }
-
-    await ref.set({
-      uid,
-      nic,
-      name,
-      dob,
-      email: email.toLowerCase(),
-      mobile,
+    await db.ref(`pendingUsers/${userId}`).set({
+      email,
       createdAt: Date.now(),
     });
 
-    res.status(200).json({ message: "Pending user saved" });
-  } catch (error) {
-    console.error("savePendingUser error:", error);
-    res.status(500).json({ message: error.message });
+    return res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// ============================================
-// FINALIZE USER (MOVE FROM PENDING → USERS)
-// ============================================
-
+// ==============================
+// FINALIZE USER
+// ==============================
 exports.finalizeUser = async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
+    const { uid, email } = req.body;
 
-    if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "No token provided" });
+    if (!uid || !email) {
+      return res.status(400).json({ success: false });
     }
 
-    const idToken = authHeader.split("Bearer ")[1];
-    const { uid } = await admin.auth().verifyIdToken(idToken);
-
-    const userRecord = await admin.auth().getUser(uid);
-
-    if (!userRecord.emailVerified) {
-      return res.status(400).json({ message: "Email is not verified" });
-    }
-
-    const pendingRef = admin.database().ref(`pendingUsers/${uid}`);
-    const userRef = admin.database().ref(`users/${uid}`);
-
-    const snapshot = await pendingRef.once("value");
-
-    if (!snapshot.exists()) {
-      return res.status(400).json({ message: "No pending user found" });
-    }
-
-    const data = snapshot.val();
-
-    // 🔥 Save to users
-    await userRef.set({
-      ...data,
-      memberType: "Standard Member",
-      theme: "light",
-      notifications: true,
-      finalizedAt: Date.now(),
+    await db.ref(`users/${uid}`).set({
+      email,
+      createdAt: Date.now(),
     });
 
-    // 🔥 Remove pending
-    await pendingRef.remove();
+    await db.ref(`pendingUsers/${uid}`).remove();
 
-    res.status(200).json({ message: "User finalized successfully" });
-  } catch (error) {
-    console.error("finalizeUser error:", error);
-    res.status(500).json({ message: error.message });
+    return res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// ============================================
-// CHECK USER STATUS
-// ============================================
-
-exports.checkUserStatus = async (req, res) => {
+// ==============================
+// CHECK USER NODE
+// ==============================
+exports.checkUserNode = async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
+    const snapshot = await db.ref("users").once("value");
+    const data = snapshot.val() || {};
 
-    if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "No token provided" });
-    }
-
-    const idToken = authHeader.split("Bearer ")[1];
-    const { uid } = await admin.auth().verifyIdToken(idToken);
-
-    const [userSnap, pendingSnap] = await Promise.all([
-      admin.database().ref(`users/${uid}`).once("value"),
-      admin.database().ref(`pendingUsers/${uid}`).once("value"),
-    ]);
-
-    if (userSnap.exists()) {
-      return res.status(200).json({ status: "user" });
-    }
-
-    if (pendingSnap.exists()) {
-      return res.status(200).json({ status: "pending" });
-    }
-
-    return res.status(200).json({ status: "not_found" });
-  } catch (error) {
-    console.error("checkUserStatus error:", error);
-    res.status(500).json({ message: error.message });
+    return res.json({
+      success: true,
+      usersCount: Object.keys(data).length,
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// ============================================
-// CHECK PENDING EMAIL (OPTIMIZED)
-// ============================================
-
+// ==============================
+// CHECK PENDING EMAIL
+// ==============================
 exports.checkPendingEmail = async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
-    }
+    const snapshot = await db
+      .ref("pendingUsers")
+      .orderByChild("email")
+      .equalTo(email)
+      .once("value");
 
-    const snapshot = await admin.database().ref("pendingUsers").once("value");
-
-    if (!snapshot.exists()) {
-      return res.status(200).json({ exists: false });
-    }
-
-    const users = snapshot.val();
-
-    const exists = Object.values(users).some(
-      (u) => u.email?.toLowerCase() === email.toLowerCase()
-    );
-
-    res.status(200).json({ exists });
-  } catch (error) {
-    console.error("checkPendingEmail error:", error);
-    res.status(500).json({ message: error.message });
+    return res.json({
+      success: true,
+      exists: snapshot.exists(),
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// ============================================
-// CHECK NODE LOCATION
-// ============================================
-
-exports.checkUserNode = async (req, res) => {
+// ==============================
+// CHECK USER STATUS
+// ==============================
+exports.checkUserStatus = async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
+    const { email } = req.body;
 
-    if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "No token provided" });
-    }
+    const snapshot = await db
+      .ref("users")
+      .orderByChild("email")
+      .equalTo(email)
+      .once("value");
 
-    const idToken = authHeader.split("Bearer ")[1];
-    const { uid } = await admin.auth().verifyIdToken(idToken);
-
-    const [userSnap, pendingSnap] = await Promise.all([
-      admin.database().ref(`users/${uid}`).once("value"),
-      admin.database().ref(`pendingUsers/${uid}`).once("value"),
-    ]);
-
-    res.status(200).json({
-      inUsers: userSnap.exists(),
-      inPendingUsers: pendingSnap.exists(),
+    return res.json({
+      success: true,
+      exists: snapshot.exists(),
     });
-  } catch (error) {
-    console.error("checkUserNode error:", error);
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 };

@@ -9,9 +9,13 @@ const {
   checkUserNode,
 } = require("../controllers/authController");
 
-// =====================================
+// ==============================
 // AUTH ROUTES
-// =====================================
+// ==============================
+
+router.get("/", (req, res) => {
+  res.json({ message: "Auth API is working 🚀" });
+});
 
 router.post("/save-pending-user", savePendingUser);
 router.post("/finalize-user", finalizeUser);
