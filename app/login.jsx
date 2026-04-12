@@ -19,8 +19,9 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
- const API_URL = "http://192.168.1.65:5000/api/auth";
+ const API_URL = "http://192.168.1.65:5000/api";
 
+ 
   const handleLogin = async () => {
     if (email === "" || password === "") {
       Alert.alert("Error", "Please enter email and password");
