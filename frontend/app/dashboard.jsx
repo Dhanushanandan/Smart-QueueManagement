@@ -1,5 +1,15 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { signOut } from "firebase/auth";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useTheme } from "../constants/useTheme";
+import { auth } from "../services/firebaseAuth";
 
 const queueStats = [
   { label: "Active Queues", value: "12", accent: "primary" },
@@ -23,8 +33,18 @@ const recentItems = [
 export default function DashboardScreen() {
   const COLORS = useTheme();
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace("/login");
+    } catch (error) {
+      Alert.alert("Logout Error", error.message || "Failed to logout");
+    }
+  };
+
   return (
     <ScrollView
+      testID="dashboardScreen"
       style={[styles.container, { backgroundColor: COLORS.background }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
@@ -37,6 +57,16 @@ export default function DashboardScreen() {
         <Text style={[styles.subtitle, { color: COLORS.gray }]}>
           Simple overview of queue activity and key shortcuts.
         </Text>
+
+        <TouchableOpacity
+          testID="logoutButton"
+          style={[styles.logoutButton, { backgroundColor: COLORS.primary }]}
+          onPress={handleLogout}
+        >
+          <Text style={[styles.logoutButtonText, { color: COLORS.white }]}>
+            Logout
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.statsRow}>
@@ -162,6 +192,17 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     lineHeight: 22,
+  },
+  logoutButton: {
+    marginTop: 18,
+    alignSelf: "flex-start",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+  },
+  logoutButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
   },
   statsRow: {
     flexDirection: "row",
