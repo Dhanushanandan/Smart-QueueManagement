@@ -289,11 +289,20 @@ export default function UserDashboard() {
   };
 
   // Navigate to service-specific booking UI
+  
   const navigateToServiceBooking = (service) => {
-    setSelectedService(service);
-    setServiceTypeModalVisible(false);
+  setSelectedService(service);
+  setServiceTypeModalVisible(false);
+  
+  // Check if NIC service is selected
+  if (service.id === "nic") {
+    // Navigate to NIC Booking screen
+    router.push("/nic-booking");
+  } else {
+    // Show booking form modal for other services
     setBookingFormVisible(true);
-  };
+  }
+};
 
   // Create appointment
   const handleCreateAppointment = async () => {
