@@ -4,16 +4,15 @@ const dotenv = require("dotenv");
 const admin = require("firebase-admin");
 const serviceAccount = require("./serviceAccountKey.json");
 
-// ROUTES
+// 🔥 ROUTES
 const authRoutes = require("./routes/authRoutes");
 
 dotenv.config();
 
-const app = express();
+// ============================================
+// FIREBASE INIT (Realtime DB)
+// ============================================
 
-// ============================================
-// FIREBASE INIT
-// ============================================
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -24,28 +23,28 @@ if (!admin.apps.length) {
 
 const db = admin.database();
 
+const app = express();
+
 // ============================================
 // MIDDLEWARE
 // ============================================
+
 app.use(cors());
 app.use(express.json());
 
-// 🔥 LOG ALL REQUESTS (VERY USEFUL)
-app.use((req, res, next) => {
-  console.log(`➡️ ${req.method} ${req.url}`);
-  next();
-});
-
 // ============================================
-// ROUTES
+// ROUTES (OPTION 1 CLEAN STRUCTURE)
 // ============================================
 
-// AUTH
+// Auth routes
 app.use("/api/auth", authRoutes);
 
+// ============================================
 // ROOT
+// ============================================
+
 app.get("/", (req, res) => {
-  res.json({ success: true, message: "SmartQueue API Running 🚀" });
+  res.json({ message: "SmartQueue API Running 🚀" });
 });
 
 // ============================================
@@ -67,12 +66,11 @@ app.get("/api/user/:email", async (req, res) => {
     const data = snapshot.val();
     const userId = Object.keys(data)[0];
 
-    return res.json({
+    res.json({
       success: true,
       data: { userId, ...data[userId] },
     });
   } catch (err) {
-    console.error("❌ USER FETCH ERROR:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -81,10 +79,6 @@ app.post("/api/user", async (req, res) => {
   try {
     const user = req.body;
 
-    if (!user.userId) {
-      return res.status(400).json({ success: false, message: "userId required" });
-    }
-
     await db.ref("users/" + user.userId).set({
       ...user,
       createdAt: Date.now(),
@@ -92,7 +86,6 @@ app.post("/api/user", async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error("❌ CREATE USER ERROR:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -106,7 +99,6 @@ app.put("/api/user/:userId", async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error("❌ UPDATE USER ERROR:", err);
     res.status(500).json({ success: false });
   }
 });
@@ -138,7 +130,6 @@ app.post("/api/appointments", async (req, res) => {
       data: newAppointment,
     });
   } catch (err) {
-    console.error("❌ CREATE APPOINTMENT ERROR:", err);
     res.status(500).json({ success: false });
   }
 });
@@ -154,7 +145,6 @@ app.get("/api/appointments/:userId", async (req, res) => {
 
     res.json({ success: true, data: result });
   } catch (err) {
-    console.error("❌ GET APPOINTMENTS ERROR:", err);
     res.status(500).json({ success: false });
   }
 });
@@ -175,72 +165,59 @@ app.get("/api/queue/:userId", async (req, res) => {
       )
       .sort((a, b) => a.createdAt - b.createdAt);
 
-    const position =
-      list.findIndex((item) => item.userId === req.params.userId) + 1;
+    let position = 0;
+
+    list.forEach((item, index) => {
+      if (item.userId === req.params.userId) {
+        position = index + 1;
+      }
+    });
 
     res.json({
       success: true,
       data: {
-        position: position || 0,
+        position,
         totalWaiting: list.length,
       },
     });
   } catch (err) {
-    console.error("❌ QUEUE ERROR:", err);
     res.status(500).json({ success: false });
   }
 });
 
 // ============================================
-// ANNOUNCEMENTS
+// SSE STREAM
 // ============================================
 
-app.get("/api/announcements", (req, res) => {
-  res.json({
-    success: true,
-    data: [
-      {
-        id: 1,
-        title: "New Service Available",
-        description: "We added new services!",
-      },
-      {
-        id: 2,
-        title: "System Maintenance",
-        description: "Sunday 2AM-4AM downtime",
-      },
-    ],
+app.get("/api/queue/stream/:userId", (req, res) => {
+  const userId = req.params.userId;
+
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
   });
-});
 
-// ============================================
-// SERVICE ARRANGEMENTS
-// ============================================
+  const ref = db.ref("appointments");
 
-app.get("/api/service-arrangements", (req, res) => {
-  res.json({
-    success: true,
-    data: [
-      {
-        id: 1,
-        title: "Priority Queue",
-      },
-      {
-        id: 2,
-        title: "Virtual Assistant",
-      },
-    ],
+  const listener = ref.on("value", (snapshot) => {
+    const data = snapshot.val() || {};
+
+    const list = Object.values(data);
+
+    let position = 0;
+
+    list.forEach((item, index) => {
+      if (item.userId === userId) {
+        position = index + 1;
+      }
+    });
+
+    res.write(`data: ${JSON.stringify({ position })}\n\n`);
   });
-});
 
-// ============================================
-// GLOBAL 404 HANDLER (🔥 VERY IMPORTANT)
-// ============================================
-
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "API route not found ❌",
+  req.on("close", () => {
+    ref.off("value", listener);
   });
 });
 
