@@ -86,19 +86,21 @@ export default function UserDashboard() {
       description: "Apply for new or replacement NIC",
       requirements: ["Birth Certificate", "Residence Proof", "Previous NIC (if replacement)"],
       fee: "Rs. 500",
-      validity: "10 years"
+      validity: "10 years",
+      color: "#1E3A8A"
     },
     { 
       id: "passport", 
       name: "Passport", 
-      fullName: "Passport Application",
+      fullName: "Sri Lankan Passport",
       icon: "airplane-outline", 
-      time: "30 mins", 
-      price: "Rs. 2000", 
-      description: "New or renewal passport application",
-      requirements: ["NIC", "Birth Certificate", "Previous Passport", "Photos"],
-      fee: "Rs. 2000 (Normal) / Rs. 5000 (Urgent)",
-      validity: "5/10 years"
+      time: "30-45 mins", 
+      price: "Rs. 3,500 - 15,000", 
+      description: "New passport application or renewal",
+      requirements: ["NIC", "Birth Certificate", "Previous Passport (if renewal)", "Passport Photos (3.5x4.5cm)", "Marriage Certificate (if applicable)"],
+      fee: "Normal: Rs. 3,500 (10yr) / Urgent: Rs. 15,000 (1-day)",
+      validity: "10 years",
+      color: "#0F172A"
     },
     { 
       id: "license", 
@@ -106,11 +108,12 @@ export default function UserDashboard() {
       fullName: "Driver's License",
       icon: "car-outline", 
       time: "20 mins", 
-      price: "Rs. 1000", 
+      price: "Rs. 1,000 - 2,500", 
       description: "Driver's license application or renewal",
-      requirements: ["NIC", "Medical Certificate", "Learning License", "Photos"],
-      fee: "Rs. 1000",
-      validity: "5 years"
+      requirements: ["NIC", "Medical Certificate", "Learning License", "Passport Photos"],
+      fee: "New: Rs. 2,500 / Renewal: Rs. 1,000",
+      validity: "8 years",
+      color: "#1E3A8A"
     },
   ];
 
@@ -288,30 +291,47 @@ export default function UserDashboard() {
   };
 
   // Navigate to service-specific booking UI
-  
   const navigateToServiceBooking = (service) => {
-  setSelectedService(service);
-  setServiceTypeModalVisible(false);
-  
-  // Check if NIC service is selected
-  if (service.id === "nic") {
-    // Navigate to NIC Booking screen
-    router.push("/NIC_Bookings/nic-booking");
-  } else {
-    // Show booking form modal for other services
-    setBookingFormVisible(true);
-  }
-};
+    setSelectedService(service);
+    setServiceTypeModalVisible(false);
+    
+    // Check which service is selected
+    if (service.id === "nic") {
+      // Navigate to NIC Booking screen
+      router.push("/NIC_Bookings/nic-booking");
+    } else if (service.id === "passport") {
+      // Navigate to Passport Booking screen
+      router.push("/Passport_Bookings/passport-booking");
+    } else if (service.id === "license") {
+      // Navigate to Driving License Booking screen (you can add this later)
+      router.push("/License_Bookings/license-booking");
+    } else {
+      // Show booking form modal for other services (fallback)
+      setBookingFormVisible(true);
+    }
+  };
 
   // Create appointment
   const handleCreateAppointment = async () => {
     if (!formData.fullName || !formData.email || !formData.phone || !formData.preferredDate || !formData.preferredTime) {
-      Alert.alert("Missing Info", "Please fill all fields");
+      Alert.alert("Missing Info", "Please fill all required fields");
       return;
     }
     
+    // Additional validation for passport
+    if (selectedService?.id === "passport") {
+      if (!formData.phone.match(/^\+94[0-9]{9}$/)) {
+        Alert.alert("Invalid Phone", "Please enter a valid Sri Lankan mobile number starting with +94");
+        return;
+      }
+    }
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/appointments`, {
+      const endpoint = selectedService?.id === "passport" 
+        ? `${API_BASE_URL}/passport-booking/appointments`
+        : `${API_BASE_URL}/appointments`;
+      
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -325,13 +345,23 @@ export default function UserDashboard() {
           email: formData.email,
           phone: formData.phone,
           address: formData.address,
-          status: "upcoming"
+          status: "upcoming",
+          // Passport-specific fields
+          ...(selectedService?.id === "passport" && {
+            passportType: "ordinary",
+            applicationType: "new"
+          })
         }),
       });
       
       const result = await response.json();
       if (result.success) {
-        Alert.alert("Success", `${selectedService.name} appointment booked successfully!`);
+        Alert.alert(
+          "Success", 
+          selectedService?.id === "passport" 
+            ? "Passport appointment booked successfully! Please bring all required documents to your appointment."
+            : `${selectedService.name} appointment booked successfully!`
+        );
         setBookingFormVisible(false);
         setServiceTypeModalVisible(false);
         setSelectedService(null);
@@ -749,20 +779,23 @@ export default function UserDashboard() {
                   style={[styles.serviceTypeItem, { backgroundColor: colors.background }]}
                   onPress={() => navigateToServiceBooking(service)}
                 >
-                  <LinearGradient colors={["#EFF6FF", "#DBEAFE"]} style={styles.serviceTypeIcon}>
-                    <Ionicons name={service.icon} size={28} color="#1E3A8A" />
+                  <LinearGradient 
+                    colors={service.id === "passport" ? ["#E2E8F0", "#CBD5E1"] : ["#EFF6FF", "#DBEAFE"]} 
+                    style={styles.serviceTypeIcon}
+                  >
+                    <Ionicons name={service.icon} size={28} color={service.id === "passport" ? "#0F172A" : "#1E3A8A"} />
                   </LinearGradient>
                   <View style={styles.serviceTypeInfo}>
                     <Text style={[styles.serviceTypeName, { color: colors.text }]}>{service.name}</Text>
                     <Text style={[styles.serviceTypeDesc, { color: colors.textSecondary }]}>{service.description}</Text>
                     <View style={styles.serviceMetaRow}>
                       <View style={styles.serviceMeta}>
-                        <Ionicons name="time-outline" size={12} color="#1E3A8A" />
-                        <Text style={styles.serviceMetaText}>{service.time}</Text>
+                        <Ionicons name="time-outline" size={12} color={service.color} />
+                        <Text style={[styles.serviceMetaText, { color: service.color }]}>{service.time}</Text>
                       </View>
                       <View style={styles.serviceMeta}>
-                        <Ionicons name="cash-outline" size={12} color="#1E3A8A" />
-                        <Text style={styles.serviceMetaText}>{service.price}</Text>
+                        <Ionicons name="cash-outline" size={12} color={service.color} />
+                        <Text style={[styles.serviceMetaText, { color: service.color }]}>{service.price}</Text>
                       </View>
                     </View>
                   </View>
@@ -779,7 +812,9 @@ export default function UserDashboard() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, styles.largeModal, { backgroundColor: colors.cardBackground }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Book {selectedService?.name}</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Book {selectedService?.name}
+              </Text>
               <TouchableOpacity onPress={() => setBookingFormVisible(false)}>
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
               </TouchableOpacity>
@@ -787,37 +822,70 @@ export default function UserDashboard() {
             
             <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
               {/* Service Information Card */}
-              <LinearGradient colors={["#EFF6FF", "#DBEAFE"]} style={styles.serviceInfoCard}>
+              <LinearGradient 
+                colors={selectedService?.id === "passport" ? ["#E2E8F0", "#CBD5E1"] : ["#EFF6FF", "#DBEAFE"]} 
+                style={styles.serviceInfoCard}
+              >
                 <View style={styles.serviceInfoHeader}>
-                  <Ionicons name={selectedService?.icon} size={32} color="#1E3A8A" />
-                  <Text style={styles.serviceInfoTitle}>{selectedService?.fullName}</Text>
+                  <Ionicons 
+                    name={selectedService?.icon} 
+                    size={32} 
+                    color={selectedService?.id === "passport" ? "#0F172A" : "#1E3A8A"} 
+                  />
+                  <Text style={[
+                    styles.serviceInfoTitle, 
+                    { color: selectedService?.id === "passport" ? "#0F172A" : "#1E3A8A" }
+                  ]}>
+                    {selectedService?.fullName}
+                  </Text>
                 </View>
                 <View style={styles.serviceInfoDetails}>
                   <View style={styles.serviceInfoRow}>
                     <Text style={styles.serviceInfoLabel}>Processing Time:</Text>
-                    <Text style={styles.serviceInfoValue}>{selectedService?.time}</Text>
+                    <Text style={[styles.serviceInfoValue, { color: selectedService?.color }]}>{selectedService?.time}</Text>
                   </View>
                   <View style={styles.serviceInfoRow}>
                     <Text style={styles.serviceInfoLabel}>Fee:</Text>
-                    <Text style={styles.serviceInfoValue}>{selectedService?.fee}</Text>
+                    <Text style={[styles.serviceInfoValue, { color: selectedService?.color }]}>{selectedService?.fee}</Text>
                   </View>
                   <View style={styles.serviceInfoRow}>
                     <Text style={styles.serviceInfoLabel}>Validity:</Text>
-                    <Text style={styles.serviceInfoValue}>{selectedService?.validity}</Text>
+                    <Text style={[styles.serviceInfoValue, { color: selectedService?.color }]}>{selectedService?.validity}</Text>
                   </View>
                 </View>
               </LinearGradient>
 
               {/* Requirements Section */}
-              <View style={styles.requirementsSection}>
-                <Text style={[styles.requirementsTitle, { color: colors.text }]}>Required Documents:</Text>
+              <View style={[
+                styles.requirementsSection,
+                selectedService?.id === "passport" && { backgroundColor: "#F8FAFC" }
+              ]}>
+                <Text style={[styles.requirementsTitle, { color: colors.text }]}>
+                  Required Documents:
+                </Text>
                 {selectedService?.requirements.map((req, index) => (
                   <View key={index} style={styles.requirementItem}>
-                    <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                    <Text style={[styles.requirementText, { color: colors.textSecondary }]}>{req}</Text>
+                    <Ionicons 
+                      name="checkmark-circle" 
+                      size={16} 
+                      color={selectedService?.id === "passport" ? "#059669" : "#10B981"} 
+                    />
+                    <Text style={[styles.requirementText, { color: colors.textSecondary }]}>
+                      {req}
+                    </Text>
                   </View>
                 ))}
               </View>
+
+              {/* Passport-specific additional info */}
+              {selectedService?.id === "passport" && (
+                <View style={styles.passportInfoBox}>
+                  <Ionicons name="information-circle-outline" size={20} color="#0F172A" />
+                  <Text style={styles.passportInfoText}>
+                    Passport applications require in-person verification. Please bring original documents.
+                  </Text>
+                </View>
+              )}
 
               <Text style={[styles.formLabel, { color: colors.text }]}>Full Name *</Text>
               <TextInput
@@ -841,7 +909,7 @@ export default function UserDashboard() {
               <Text style={[styles.formLabel, { color: colors.text }]}>Phone Number *</Text>
               <TextInput
                 style={[styles.formInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                placeholder="Enter your phone number"
+                placeholder={selectedService?.id === "passport" ? "+94 77 123 4567" : "Enter your phone number"}
                 placeholderTextColor={colors.textSecondary}
                 value={formData.phone}
                 onChangeText={(text) => setFormData({ ...formData, phone: text })}
@@ -863,10 +931,21 @@ export default function UserDashboard() {
                 {dateOptions.map(date => (
                   <TouchableOpacity
                     key={date}
-                    style={[styles.optionChip, formData.preferredDate === date && styles.optionChipSelected, { backgroundColor: colors.background }]}
+                    style={[
+                      styles.optionChip, 
+                      formData.preferredDate === date && styles.optionChipSelected, 
+                      { backgroundColor: colors.background },
+                      selectedService?.id === "passport" && formData.preferredDate === date && { backgroundColor: "#0F172A" }
+                    ]}
                     onPress={() => setFormData({ ...formData, preferredDate: date })}
                   >
-                    <Text style={[styles.optionChipText, formData.preferredDate === date && styles.optionChipTextSelected, { color: colors.text }]}>{date}</Text>
+                    <Text style={[
+                      styles.optionChipText, 
+                      formData.preferredDate === date && styles.optionChipTextSelected, 
+                      { color: colors.text }
+                    ]}>
+                      {date}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -876,17 +955,31 @@ export default function UserDashboard() {
                 {timeOptions.map(time => (
                   <TouchableOpacity
                     key={time}
-                    style={[styles.optionChip, formData.preferredTime === time && styles.optionChipSelected, { backgroundColor: colors.background }]}
+                    style={[
+                      styles.optionChip, 
+                      formData.preferredTime === time && styles.optionChipSelected, 
+                      { backgroundColor: colors.background },
+                      selectedService?.id === "passport" && formData.preferredTime === time && { backgroundColor: "#0F172A" }
+                    ]}
                     onPress={() => setFormData({ ...formData, preferredTime: time })}
                   >
-                    <Text style={[styles.optionChipText, formData.preferredTime === time && styles.optionChipTextSelected, { color: colors.text }]}>{time}</Text>
+                    <Text style={[
+                      styles.optionChipText, 
+                      formData.preferredTime === time && styles.optionChipTextSelected, 
+                      { color: colors.text }
+                    ]}>
+                      {time}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </ScrollView>
             
             <TouchableOpacity style={styles.nextButton} onPress={handleCreateAppointment}>
-              <LinearGradient colors={["#1E3A8A", "#3B82F6"]} style={styles.nextButtonGradient}>
+              <LinearGradient 
+                colors={selectedService?.id === "passport" ? ["#0F172A", "#1E3A8A"] : ["#1E3A8A", "#3B82F6"]} 
+                style={styles.nextButtonGradient}
+              >
                 <Text style={styles.nextButtonText}>Confirm Appointment</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -970,7 +1063,7 @@ export default function UserDashboard() {
               {(activeBookingTab === "upcoming" ? (bookingDetails.upcoming || []) : (bookingDetails.past || [])).map(booking => (
                 <View key={booking.id} style={[styles.bookingItem, { backgroundColor: colors.background }]}>
                   <View style={styles.bookingIcon}>
-                    <Ionicons name="calendar" size={20} color="#1E3A8A" />
+                    <Ionicons name={booking.service === "passport" ? "airplane" : "calendar"} size={20} color={booking.service === "passport" ? "#0F172A" : "#1E3A8A"} />
                   </View>
                   <View style={styles.bookingInfo}>
                     <Text style={[styles.bookingService, { color: colors.text }]}>{booking.serviceName || booking.service}</Text>
@@ -1209,18 +1302,35 @@ const styles = StyleSheet.create({
   serviceTypeDesc: { fontSize: 12, marginBottom: 6 },
   serviceMetaRow: { flexDirection: "row", gap: 12, marginTop: 4 },
   serviceMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
-  serviceMetaText: { fontSize: 10, color: "#1E3A8A", fontWeight: "500" },
+  serviceMetaText: { fontSize: 10, fontWeight: "500" },
   serviceInfoCard: { borderRadius: 12, padding: 16, marginBottom: 16 },
   serviceInfoHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
-  serviceInfoTitle: { fontSize: 16, fontWeight: "700", color: "#1E3A8A", flex: 1 },
+  serviceInfoTitle: { fontSize: 16, fontWeight: "700", flex: 1 },
   serviceInfoDetails: { gap: 8 },
   serviceInfoRow: { flexDirection: "row", justifyContent: "space-between" },
   serviceInfoLabel: { fontSize: 12, color: "#64748B" },
-  serviceInfoValue: { fontSize: 12, fontWeight: "600", color: "#1E3A8A" },
+  serviceInfoValue: { fontSize: 12, fontWeight: "600" },
   requirementsSection: { backgroundColor: "#F0FDF4", borderRadius: 12, padding: 12, marginBottom: 16 },
   requirementsTitle: { fontSize: 14, fontWeight: "600", marginBottom: 8 },
   requirementItem: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
   requirementText: { fontSize: 12 },
+  passportInfoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  passportInfoText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#0F172A',
+    fontWeight: '500',
+  },
   formContainer: { maxHeight: 500 },
   formLabel: { fontSize: 14, fontWeight: "600", marginTop: 12, marginBottom: 8 },
   formInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 16, marginBottom: 8 },
