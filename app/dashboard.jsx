@@ -22,8 +22,7 @@ import {
 import { auth } from "../services/firebaseAuth";
 
 const { width } = Dimensions.get("window");
-
-const API_BASE_URL = "http://192.168.1.65:5000/api"; // Update with your IP and port
+const API_BASE_URL = "http://192.168.1.65:5000/api";
 
 export default function UserDashboard() {
   // State variables
@@ -74,7 +73,7 @@ export default function UserDashboard() {
   const eventSourceRef = useRef(null);
   let cameraRef = useRef(null);
 
-  // Available services - 3 options: NIC, Passport, Driving License
+  // Available services
   const services = [
     { 
       id: "nic", 
@@ -97,27 +96,26 @@ export default function UserDashboard() {
       time: "30-45 mins", 
       price: "Rs. 3,500 - 15,000", 
       description: "New passport application or renewal",
-      requirements: ["NIC", "Birth Certificate", "Previous Passport (if renewal)", "Passport Photos (3.5x4.5cm)", "Marriage Certificate (if applicable)"],
-      fee: "Normal: Rs. 3,500 (10yr) / Urgent: Rs. 15,000 (1-day)",
+      requirements: ["NIC", "Birth Certificate", "Previous Passport (if renewal)", "Passport Photos", "Marriage Certificate"],
+      fee: "Normal: Rs. 3,500 / Urgent: Rs. 15,000",
       validity: "10 years",
-      color: "#0F172A"
+      color: "#3B82F6"
     },
     { 
       id: "license", 
       name: "Driving License", 
       fullName: "Driver's License",
       icon: "car-outline", 
-      time: "20 mins", 
+      time: "20-30 mins", 
       price: "Rs. 1,000 - 2,500", 
       description: "Driver's license application or renewal",
-      requirements: ["NIC", "Medical Certificate", "Learning License", "Passport Photos"],
+      requirements: ["NIC", "Medical Certificate", "Previous License", "Passport Photos"],
       fee: "New: Rs. 2,500 / Renewal: Rs. 1,000",
       validity: "8 years",
-      color: "#1E3A8A"
+      color: "#10B981"
     },
   ];
 
-  // Date options
   const dateOptions = ["Today", "Tomorrow", "2026-04-15", "2026-04-16", "2026-04-17"];
   const timeOptions = ["09:00 AM", "10:00 AM", "11:00 AM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"];
 
@@ -177,8 +175,6 @@ export default function UserDashboard() {
         return null;
       }
       
-      console.log("Fetching data for:", userEmail);
-      
       const response = await fetch(`${API_BASE_URL}/user/${encodeURIComponent(userEmail)}`);
       const result = await response.json();
       
@@ -188,7 +184,6 @@ export default function UserDashboard() {
         setIsDarkMode(result.data.theme === "dark");
         return result.data.userId;
       } else {
-        console.log("User not found in backend, creating...");
         return await createUserInBackend(currentUser);
       }
     } catch (error) {
@@ -236,7 +231,6 @@ export default function UserDashboard() {
       const result = await response.json();
       if (result.success) {
         const appointments = result.data || [];
-        const now = new Date();
         
         const categorized = {
           upcoming: appointments.filter(apt => apt.status === 'upcoming' || apt.status === 'pending' || apt.status === 'confirmed'),
@@ -295,18 +289,13 @@ export default function UserDashboard() {
     setSelectedService(service);
     setServiceTypeModalVisible(false);
     
-    // Check which service is selected
     if (service.id === "nic") {
-      // Navigate to NIC Booking screen
       router.push("/NIC_Bookings/nic-booking");
     } else if (service.id === "passport") {
-      // Navigate to Passport Booking screen
       router.push("/Passport_Bookings/passport-booking");
     } else if (service.id === "license") {
-      // Navigate to Driving License Booking screen (you can add this later)
       router.push("/License_Bookings/license-booking");
     } else {
-      // Show booking form modal for other services (fallback)
       setBookingFormVisible(true);
     }
   };
@@ -318,20 +307,8 @@ export default function UserDashboard() {
       return;
     }
     
-    // Additional validation for passport
-    if (selectedService?.id === "passport") {
-      if (!formData.phone.match(/^\+94[0-9]{9}$/)) {
-        Alert.alert("Invalid Phone", "Please enter a valid Sri Lankan mobile number starting with +94");
-        return;
-      }
-    }
-    
     try {
-      const endpoint = selectedService?.id === "passport" 
-        ? `${API_BASE_URL}/passport-booking/appointments`
-        : `${API_BASE_URL}/appointments`;
-      
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${API_BASE_URL}/appointments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -345,23 +322,13 @@ export default function UserDashboard() {
           email: formData.email,
           phone: formData.phone,
           address: formData.address,
-          status: "upcoming",
-          // Passport-specific fields
-          ...(selectedService?.id === "passport" && {
-            passportType: "ordinary",
-            applicationType: "new"
-          })
+          status: "upcoming"
         }),
       });
       
       const result = await response.json();
       if (result.success) {
-        Alert.alert(
-          "Success", 
-          selectedService?.id === "passport" 
-            ? "Passport appointment booked successfully! Please bring all required documents to your appointment."
-            : `${selectedService.name} appointment booked successfully!`
-        );
+        Alert.alert("Success", `${selectedService.name} appointment booked successfully!`);
         setBookingFormVisible(false);
         setServiceTypeModalVisible(false);
         setSelectedService(null);
@@ -384,7 +351,7 @@ export default function UserDashboard() {
     }
   };
 
-  // Handle QR Code - Open Camera
+  // Handle QR Code
   const handleQRCode = async () => {
     if (hasCameraPermission) {
       setQrModalVisible(true);
@@ -400,7 +367,7 @@ export default function UserDashboard() {
     setQrModalVisible(false);
   };
 
-  // Handle Nearby Facilities - Open Google Maps
+  // Handle Nearby Facilities
   const handleNearbyFacilities = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/nearby-facilities`);
@@ -480,8 +447,6 @@ export default function UserDashboard() {
     };
   };
 
-  const colors = getThemeColors();
-
   // Initial load
   useEffect(() => {
     const init = async () => {
@@ -524,6 +489,8 @@ export default function UserDashboard() {
       if (eventSourceRef.current) eventSourceRef.current.close();
     };
   }, []);
+
+  const colors = getThemeColors();
 
   // Loading Screen
   if (isLoading) {
@@ -762,7 +729,7 @@ export default function UserDashboard() {
         </TouchableOpacity>
       </View>
 
-      {/* Service Type Modal - 3 Services: NIC, Passport, Driving License */}
+      {/* Service Type Modal */}
       <Modal visible={serviceTypeModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, styles.largeModal, { backgroundColor: colors.cardBackground }]}>
@@ -780,10 +747,10 @@ export default function UserDashboard() {
                   onPress={() => navigateToServiceBooking(service)}
                 >
                   <LinearGradient 
-                    colors={service.id === "passport" ? ["#E2E8F0", "#CBD5E1"] : ["#EFF6FF", "#DBEAFE"]} 
+                    colors={service.id === "license" ? ["#D1FAE5", "#A7F3D0"] : service.id === "passport" ? ["#E2E8F0", "#CBD5E1"] : ["#EFF6FF", "#DBEAFE"]} 
                     style={styles.serviceTypeIcon}
                   >
-                    <Ionicons name={service.icon} size={28} color={service.id === "passport" ? "#0F172A" : "#1E3A8A"} />
+                    <Ionicons name={service.icon} size={28} color={service.id === "license" ? "#059669" : service.id === "passport" ? "#0F172A" : "#1E3A8A"} />
                   </LinearGradient>
                   <View style={styles.serviceTypeInfo}>
                     <Text style={[styles.serviceTypeName, { color: colors.text }]}>{service.name}</Text>
@@ -807,7 +774,7 @@ export default function UserDashboard() {
         </View>
       </Modal>
 
-      {/* Booking Form Modal - Individual Service Booking UI */}
+      {/* Booking Form Modal */}
       <Modal visible={bookingFormVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, styles.largeModal, { backgroundColor: colors.cardBackground }]}>
@@ -821,21 +788,13 @@ export default function UserDashboard() {
             </View>
             
             <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
-              {/* Service Information Card */}
               <LinearGradient 
-                colors={selectedService?.id === "passport" ? ["#E2E8F0", "#CBD5E1"] : ["#EFF6FF", "#DBEAFE"]} 
+                colors={selectedService?.id === "license" ? ["#D1FAE5", "#A7F3D0"] : selectedService?.id === "passport" ? ["#E2E8F0", "#CBD5E1"] : ["#EFF6FF", "#DBEAFE"]} 
                 style={styles.serviceInfoCard}
               >
                 <View style={styles.serviceInfoHeader}>
-                  <Ionicons 
-                    name={selectedService?.icon} 
-                    size={32} 
-                    color={selectedService?.id === "passport" ? "#0F172A" : "#1E3A8A"} 
-                  />
-                  <Text style={[
-                    styles.serviceInfoTitle, 
-                    { color: selectedService?.id === "passport" ? "#0F172A" : "#1E3A8A" }
-                  ]}>
+                  <Ionicons name={selectedService?.icon} size={32} color={selectedService?.color} />
+                  <Text style={[styles.serviceInfoTitle, { color: selectedService?.color }]}>
                     {selectedService?.fullName}
                   </Text>
                 </View>
@@ -855,37 +814,19 @@ export default function UserDashboard() {
                 </View>
               </LinearGradient>
 
-              {/* Requirements Section */}
-              <View style={[
-                styles.requirementsSection,
-                selectedService?.id === "passport" && { backgroundColor: "#F8FAFC" }
-              ]}>
+              <View style={[styles.requirementsSection, selectedService?.id === "license" && { backgroundColor: "#ECFDF5" }]}>
                 <Text style={[styles.requirementsTitle, { color: colors.text }]}>
                   Required Documents:
                 </Text>
                 {selectedService?.requirements.map((req, index) => (
                   <View key={index} style={styles.requirementItem}>
-                    <Ionicons 
-                      name="checkmark-circle" 
-                      size={16} 
-                      color={selectedService?.id === "passport" ? "#059669" : "#10B981"} 
-                    />
+                    <Ionicons name="checkmark-circle" size={16} color={selectedService?.color} />
                     <Text style={[styles.requirementText, { color: colors.textSecondary }]}>
                       {req}
                     </Text>
                   </View>
                 ))}
               </View>
-
-              {/* Passport-specific additional info */}
-              {selectedService?.id === "passport" && (
-                <View style={styles.passportInfoBox}>
-                  <Ionicons name="information-circle-outline" size={20} color="#0F172A" />
-                  <Text style={styles.passportInfoText}>
-                    Passport applications require in-person verification. Please bring original documents.
-                  </Text>
-                </View>
-              )}
 
               <Text style={[styles.formLabel, { color: colors.text }]}>Full Name *</Text>
               <TextInput
@@ -909,7 +850,7 @@ export default function UserDashboard() {
               <Text style={[styles.formLabel, { color: colors.text }]}>Phone Number *</Text>
               <TextInput
                 style={[styles.formInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                placeholder={selectedService?.id === "passport" ? "+94 77 123 4567" : "Enter your phone number"}
+                placeholder="Enter your phone number"
                 placeholderTextColor={colors.textSecondary}
                 value={formData.phone}
                 onChangeText={(text) => setFormData({ ...formData, phone: text })}
@@ -935,6 +876,7 @@ export default function UserDashboard() {
                       styles.optionChip, 
                       formData.preferredDate === date && styles.optionChipSelected, 
                       { backgroundColor: colors.background },
+                      selectedService?.id === "license" && formData.preferredDate === date && { backgroundColor: "#059669" },
                       selectedService?.id === "passport" && formData.preferredDate === date && { backgroundColor: "#0F172A" }
                     ]}
                     onPress={() => setFormData({ ...formData, preferredDate: date })}
@@ -959,6 +901,7 @@ export default function UserDashboard() {
                       styles.optionChip, 
                       formData.preferredTime === time && styles.optionChipSelected, 
                       { backgroundColor: colors.background },
+                      selectedService?.id === "license" && formData.preferredTime === time && { backgroundColor: "#059669" },
                       selectedService?.id === "passport" && formData.preferredTime === time && { backgroundColor: "#0F172A" }
                     ]}
                     onPress={() => setFormData({ ...formData, preferredTime: time })}
@@ -977,7 +920,7 @@ export default function UserDashboard() {
             
             <TouchableOpacity style={styles.nextButton} onPress={handleCreateAppointment}>
               <LinearGradient 
-                colors={selectedService?.id === "passport" ? ["#0F172A", "#1E3A8A"] : ["#1E3A8A", "#3B82F6"]} 
+                colors={selectedService?.id === "license" ? ["#059669", "#10B981"] : selectedService?.id === "passport" ? ["#0F172A", "#1E3A8A"] : ["#1E3A8A", "#3B82F6"]} 
                 style={styles.nextButtonGradient}
               >
                 <Text style={styles.nextButtonText}>Confirm Appointment</Text>
@@ -1063,7 +1006,11 @@ export default function UserDashboard() {
               {(activeBookingTab === "upcoming" ? (bookingDetails.upcoming || []) : (bookingDetails.past || [])).map(booking => (
                 <View key={booking.id} style={[styles.bookingItem, { backgroundColor: colors.background }]}>
                   <View style={styles.bookingIcon}>
-                    <Ionicons name={booking.service === "passport" ? "airplane" : "calendar"} size={20} color={booking.service === "passport" ? "#0F172A" : "#1E3A8A"} />
+                    <Ionicons 
+                      name={booking.service === "license" ? "car" : booking.service === "passport" ? "airplane" : "calendar"} 
+                      size={20} 
+                      color={booking.service === "license" ? "#059669" : booking.service === "passport" ? "#0F172A" : "#1E3A8A"} 
+                    />
                   </View>
                   <View style={styles.bookingInfo}>
                     <Text style={[styles.bookingService, { color: colors.text }]}>{booking.serviceName || booking.service}</Text>
@@ -1314,23 +1261,6 @@ const styles = StyleSheet.create({
   requirementsTitle: { fontSize: 14, fontWeight: "600", marginBottom: 8 },
   requirementItem: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
   requirementText: { fontSize: 12 },
-  passportInfoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-  },
-  passportInfoText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#0F172A',
-    fontWeight: '500',
-  },
   formContainer: { maxHeight: 500 },
   formLabel: { fontSize: 14, fontWeight: "600", marginTop: 12, marginBottom: 8 },
   formInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 16, marginBottom: 8 },
