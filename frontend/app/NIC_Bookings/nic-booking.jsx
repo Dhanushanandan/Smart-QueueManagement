@@ -3,18 +3,18 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import { pickDocumentWithType } from '../utils/documentPicker';
@@ -405,10 +405,8 @@ export default function NICBooking() {
         fullNameLocal: form.fullNameLocal?.trim() || '', 
         dob: convertDateForAPI(form.dob), 
         gender: form.gender, 
-        mobile: form.mobile,  // Send with +94 prefix
+        mobile: form.mobile,
       };
-      
-      console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
       
       const response = await fetch(`${API_BASE_URL}/nic-booking/save-personal/${userId}`, { 
         method: 'POST', 
@@ -462,11 +460,128 @@ export default function NICBooking() {
     finally { setLoading(false); }
   };
 
+  const saveRenewalStep1 = async () => {
+    if (!form.fullName || form.fullName.trim().length < 3) { 
+      Alert.alert("Validation Error", "Full name must be at least 3 characters"); 
+      return false; 
+    }
+    if (!form.dob || !validateDateFormat(form.dob)) { 
+      Alert.alert("Validation Error", "Please enter a valid date in DD/MM/YYYY format"); 
+      return false; 
+    }
+    if (!form.gender || !validatePhoneNumber(form.mobile)) { 
+      Alert.alert("Validation Error", "Please fill all required fields"); 
+      return false; 
+    }
+    if (!form.oldNicNumber || !form.reason) {
+      Alert.alert("Validation Error", "Please provide old NIC number and reason for renewal");
+      return false;
+    }
+    setLoading(true);
+    try {
+      const payload = { 
+        fullName: form.fullName.trim(), 
+        fullNameLocal: form.fullNameLocal?.trim() || '', 
+        dob: convertDateForAPI(form.dob), 
+        gender: form.gender, 
+        mobile: form.mobile,
+        oldNicNumber: form.oldNicNumber.trim(),
+        oldNicIssueDate: convertDateForAPI(form.oldNicIssueDate),
+        reason: form.reason
+      };
+      
+      const response = await fetch(`${API_BASE_URL}/nic-booking/save-renewal-step1/${userId}`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload) 
+      });
+      const result = await response.json();
+      if (!response.ok) { 
+        Alert.alert("Error", result.error || "Failed to save"); 
+        return false; 
+      }
+      return result.success;
+    } catch (error) { 
+      Alert.alert("Connection Error", "Unable to connect to server."); 
+      return false; 
+    }
+    finally { setLoading(false); }
+  };
+
+  const saveRenewalStep2 = async () => {
+    if ((form.reason === 'lost' || form.reason === 'stolen') && 
+        (!form.policeStation || !form.complaintNumber || !form.complaintDate)) {
+      Alert.alert("Validation Error", "Police report details are required for lost/stolen NIC");
+      return false;
+    }
+    setLoading(true);
+    try {
+      const payload = { 
+        policeStation: form.policeStation?.trim() || '',
+        complaintNumber: form.complaintNumber?.trim() || '',
+        complaintDate: convertDateForAPI(form.complaintDate)
+      };
+      const response = await fetch(`${API_BASE_URL}/nic-booking/save-renewal-step2/${userId}`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload) 
+      });
+      const result = await response.json();
+      if (!response.ok) { 
+        Alert.alert("Error", result.error || "Failed to save"); 
+        return false; 
+      }
+      return result.success;
+    } catch (error) { 
+      Alert.alert("Error", "Network error. Please try again."); 
+      return false; 
+    }
+    finally { setLoading(false); }
+  };
+
+  const saveRenewalStep3 = async () => {
+    if (!form.address || !form.district || !form.ds || !form.gn || !form.birthNo || !form.birthDate) { 
+      Alert.alert("Validation Error", "Please fill all required fields"); 
+      return false; 
+    }
+    setLoading(true);
+    try {
+      const payload = { 
+        address: form.address.trim(), 
+        district: form.district.trim(), 
+        ds: form.ds.trim(), 
+        gn: form.gn.trim(), 
+        birthNo: form.birthNo.trim(), 
+        birthDate: convertDateForAPI(form.birthDate),
+        remarks: form.remarks?.trim() || ''
+      };
+      const response = await fetch(`${API_BASE_URL}/nic-booking/save-renewal-step3/${userId}`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload) 
+      });
+      const result = await response.json();
+      if (!response.ok) { 
+        Alert.alert("Error", result.error || "Failed to save"); 
+        return false; 
+      }
+      return result.success;
+    } catch (error) { 
+      Alert.alert("Error", "Network error. Please try again."); 
+      return false; 
+    }
+    finally { setLoading(false); }
+  };
+
   const nextStep = async () => {
     Keyboard.dismiss();
     if (serviceType === 'registration') {
       if (step === 1) { const success = await saveRegistrationStep1(); if (success) setStep(2); }
       else if (step === 2) { const success = await saveRegistrationStep2(); if (success) setStep(3); }
+    } else if (serviceType === 'renewal') {
+      if (step === 1) { const success = await saveRenewalStep1(); if (success) setStep(2); }
+      else if (step === 2) { const success = await saveRenewalStep2(); if (success) setStep(3); }
+      else if (step === 3) { const success = await saveRenewalStep3(); if (success) setStep(4); }
     }
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   };
@@ -797,6 +912,232 @@ export default function NICBooking() {
                       <View style={styles.reviewSection}>
                         <Text style={styles.reviewSectionTitle}>Address</Text>
                         {[["Address", form.address], ["District", form.district], ["DS Division", form.ds], ["GN Division", form.gn], ["Birth Cert No.", form.birthNo], ["Issue Date", form.birthDate], ["Citizenship", form.citizenship]].map(([l, v]) => (
+                          <View style={styles.reviewRow} key={l}>
+                            <Text style={styles.reviewLabel}>{l}</Text>
+                            <Text style={styles.reviewValue}>{v || "—"}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </>
+          )}
+
+          {serviceType === 'renewal' && (
+            <>
+              {step === 1 && (
+                <View style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardIcon}><Ionicons name="person" size={24} color={COLORS.primary} /></View>
+                    <View style={styles.cardHeaderText}>
+                      <Text style={styles.section}>Personal Information</Text>
+                      <Text style={styles.sectionSubtext}>Please provide your basic details</Text>
+                    </View>
+                  </View>
+                  <View style={styles.formSection}>
+                    <Input icon="person-outline" label="Full Name" value={form.fullName} onChangeText={(t) => updateField("fullName", t)} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                    <Input icon="language-outline" label="Name in Sinhala/Tamil" value={form.fullNameLocal} onChangeText={(t) => updateField("fullNameLocal", t)} focusedField={focusedField} setFocusedField={setFocusedField} />
+                    <DateInput icon="calendar-outline" label="Date of Birth" value={form.dob} onChange={(t) => updateField("dob", t)} required focusedField={focusedField} setFocusedField={setFocusedField} minAge={15} />
+                    <SelectInput label="Gender" value={form.gender} onChange={(t) => updateField("gender", t)} options={["Male", "Female", "Other"]} required />
+                    <PhoneInput icon="call-outline" label="Mobile Number" value={form.mobile} onChangeText={(t) => updateField("mobile", t)} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                    
+                    <View style={styles.divider}>
+                      <View style={styles.dividerLine} /><Text style={styles.dividerText}>Old NIC Details</Text><View style={styles.dividerLine} />
+                    </View>
+                    <Input icon="card-outline" label="Old NIC Number" value={form.oldNicNumber} onChangeText={(t) => updateField("oldNicNumber", t)} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                    <DateInput icon="calendar-outline" label="Old NIC Issue Date" value={form.oldNicIssueDate} onChange={(t) => updateField("oldNicIssueDate", t)} focusedField={focusedField} setFocusedField={setFocusedField} minAge={0} />
+                    <SelectInput label="Reason for Renewal" value={form.reason} onChange={(t) => updateField("reason", t)} options={["lost", "damaged", "stolen", "expired", "information change"]} required />
+                  </View>
+                </View>
+              )}
+
+              {step === 2 && (
+                <View style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardIcon}><Ionicons name="shield-checkmark" size={24} color={COLORS.primary} /></View>
+                    <View style={styles.cardHeaderText}>
+                      <Text style={styles.section}>Police Report</Text>
+                      <Text style={styles.sectionSubtext}>Required for lost/stolen NIC</Text>
+                    </View>
+                  </View>
+                  <View style={styles.formSection}>
+                    {form.reason === 'lost' || form.reason === 'stolen' ? (
+                      <>
+                        <Input icon="business-outline" label="Police Station" value={form.policeStation} onChangeText={(t) => updateField("policeStation", t)} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                        <Input icon="document-text-outline" label="Complaint Number" value={form.complaintNumber} onChangeText={(t) => updateField("complaintNumber", t)} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                        <DateInput icon="calendar-outline" label="Complaint Date" value={form.complaintDate} onChange={(t) => updateField("complaintDate", t)} required focusedField={focusedField} setFocusedField={setFocusedField} minAge={0} />
+                      </>
+                    ) : (
+                      <View style={styles.infoBox}>
+                        <Ionicons name="information-circle-outline" size={20} color={COLORS.primary} />
+                        <Text style={styles.infoText}>Police report not required for {form.reason} renewal</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              )}
+
+              {step === 3 && (
+                <View style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardIcon}><Ionicons name="home" size={24} color={COLORS.primary} /></View>
+                    <View style={styles.cardHeaderText}>
+                      <Text style={styles.section}>Address & Documents</Text>
+                      <Text style={styles.sectionSubtext}>Enter your address and document details</Text>
+                    </View>
+                  </View>
+                  <View style={styles.formSection}>
+                    <Input icon="home-outline" label="Permanent Address" value={form.address} onChangeText={(t) => updateField("address", t)} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                    <View style={styles.rowFields}>
+                      <View style={styles.halfField}><Input icon="location-outline" label="District" value={form.district} onChangeText={(t) => updateField("district", t)} required focusedField={focusedField} setFocusedField={setFocusedField} /></View>
+                      <View style={styles.halfField}><Input icon="navigate-outline" label="DS Division" value={form.ds} onChangeText={(t) => updateField("ds", t)} required focusedField={focusedField} setFocusedField={setFocusedField} /></View>
+                    </View>
+                    <Input icon="map-outline" label="GN Division" value={form.gn} onChangeText={(t) => updateField("gn", t)} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                    
+                    <View style={styles.divider}>
+                      <View style={styles.dividerLine} /><Text style={styles.dividerText}>Birth Certificate Details</Text><View style={styles.dividerLine} />
+                    </View>
+                    <View style={styles.rowFields}>
+                      <View style={styles.halfField}><Input icon="document-text-outline" label="Certificate No." value={form.birthNo} onChangeText={(t) => updateField("birthNo", t)} required focusedField={focusedField} setFocusedField={setFocusedField} /></View>
+                      <View style={styles.halfField}><DateInput icon="calendar-outline" label="Issue Date" value={form.birthDate} onChange={(t) => updateField("birthDate", t)} required focusedField={focusedField} setFocusedField={setFocusedField} minAge={0} /></View>
+                    </View>
+                    <Input icon="create-outline" label="Additional Remarks" value={form.remarks} onChangeText={(t) => updateField("remarks", t)} focusedField={focusedField} setFocusedField={setFocusedField} multiline numberOfLines={3} />
+                  </View>
+                </View>
+              )}
+
+              {step === 4 && (
+                <View style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardIcon}><Ionicons name="calendar" size={24} color={COLORS.primary} /></View>
+                    <View style={styles.cardHeaderText}>
+                      <Text style={styles.section}>Appointment & Review</Text>
+                      <Text style={styles.sectionSubtext}>Select time slot and upload documents</Text>
+                    </View>
+                  </View>
+                  <View style={styles.formSection}>
+                    <View style={styles.aiSection}>
+                      <View style={styles.aiHeader}>
+                        <Ionicons name="time-outline" size={20} color={COLORS.warning} />
+                        <Text style={styles.aiTitle}>Select Time Slot</Text>
+                      </View>
+                      {recommendedSlot && (
+                        <TouchableOpacity style={[styles.aiBox, form.timeslot === recommendedSlot.fullSlot && styles.aiBoxSelected]} onPress={() => updateField("timeslot", recommendedSlot.fullSlot)}>
+                          <View style={styles.aiTimeSlot}>
+                            <View>
+                              <Text style={styles.aiTimeTitle}>Tomorrow, {recommendedSlot.time}</Text>
+                              <Text style={styles.aiTimeSubtext}>{recommendedSlot.crowdLevel}</Text>
+                            </View>
+                            {form.timeslot === recommendedSlot.fullSlot ? 
+                              <Ionicons name="checkmark-circle" size={24} color={COLORS.success} /> : 
+                              <View style={styles.selectSlotButton}><Text style={styles.selectSlotText}>Select</Text></View>
+                            }
+                          </View>
+                        </TouchableOpacity>
+                      )}
+                      <TouchableOpacity style={styles.manualSelectButton} onPress={() => { loadAvailableSlots(); setShowManualSlotPicker(true); }}>
+                        <Text style={styles.manualSelectText}>Choose different time slot manually</Text>
+                        <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+                      </TouchableOpacity>
+                      {showManualSlotPicker && (
+                        <View style={styles.slotPickerContainer}>
+                          <View style={styles.slotPickerHeader}>
+                            <Text style={styles.slotPickerTitle}>Available Time Slots</Text>
+                            <TouchableOpacity onPress={() => setShowManualSlotPicker(false)}>
+                              <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                            </TouchableOpacity>
+                          </View>
+                          <ScrollView style={styles.slotList}>
+                            {availableSlots.length > 0 ? availableSlots.map((slot, index) => (
+                              <TouchableOpacity key={index} style={[styles.slotItem, form.timeslot === slot.fullSlot && styles.slotItemSelected]} onPress={() => handleManualSlotSelect(slot)}>
+                                <View>
+                                  <Text style={styles.slotDate}>{slot.date}</Text>
+                                  <Text style={styles.slotTime}>{slot.time}</Text>
+                                </View>
+                                <View style={styles.slotInfo}>
+                                  <Text style={[styles.slotCrowd, { color: slot.crowdLevel === 'Less crowded' ? COLORS.success : COLORS.warning }]}>{slot.crowdLevel}</Text>
+                                </View>
+                              </TouchableOpacity>
+                            )) : <Text style={styles.noSlotsText}>Loading...</Text>}
+                          </ScrollView>
+                        </View>
+                      )}
+                      {form.timeslot && (
+                        <View style={styles.selectedSlotDisplay}>
+                          <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
+                          <Text style={styles.selectedSlotText}>Selected: {form.timeslot}</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <View style={styles.documentSection}>
+                      <View style={styles.aiHeader}>
+                        <Ionicons name="document-text-outline" size={20} color={COLORS.primary} />
+                        <Text style={styles.aiTitle}>Required Documents</Text>
+                      </View>
+                      <TouchableOpacity style={[styles.uploadSection, isDocumentsUploaded && styles.uploadSectionCompleted]} onPress={handleDocumentUpload}>
+                        <View style={styles.uploadIcon}>
+                          <Ionicons name={isDocumentsUploaded ? "checkmark-circle" : "cloud-upload-outline"} size={28} color={isDocumentsUploaded ? COLORS.success : COLORS.primary} />
+                        </View>
+                        <View style={styles.uploadContent}>
+                          <Text style={styles.uploadTitle}>{isDocumentsUploaded ? 'Documents Uploaded' : 'Upload Documents'}</Text>
+                          <Text style={styles.uploadSubtext}>Birth certificate, police report, photos</Text>
+                        </View>
+                        <Ionicons name="cloud-upload-outline" size={28} color={COLORS.primary} />
+                      </TouchableOpacity>
+                      {!isDocumentsUploaded && (
+                        <TouchableOpacity style={styles.directUploadButton} onPress={handleDocumentUpload}>
+                          <Ionicons name="cloud-upload" size={20} color="#FFF" />
+                          <Text style={styles.directUploadText}>Click to Upload Required Documents</Text>
+                        </TouchableOpacity>
+                      )}
+                      {uploadedDocuments.length > 0 && (
+                        <View style={styles.uploadedDocsList}>
+                          <Text style={styles.uploadedDocsTitle}>Uploaded Documents ({uploadedDocuments.length})</Text>
+                          {uploadedDocuments.map((doc) => (
+                            <View key={doc.id} style={styles.uploadedDocItem}>
+                              <View style={styles.uploadedDocInfo}>
+                                <Ionicons name="document-text" size={18} color={COLORS.primary} />
+                                <Text style={styles.uploadedDocName}>
+                                  {doc.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                                </Text>
+                              </View>
+                              <TouchableOpacity onPress={() => removeDocument(doc.id)}>
+                                <Ionicons name="close-circle" size={20} color={COLORS.danger} />
+                              </TouchableOpacity>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+
+                    <View style={styles.reviewCard}>
+                      <Text style={styles.reviewTitle}>Review Your Information</Text>
+                      <View style={styles.reviewSection}>
+                        <Text style={styles.reviewSectionTitle}>Personal Details</Text>
+                        {[["Full Name", form.fullName], ["DOB", form.dob], ["Gender", form.gender], ["Mobile", form.mobile]].map(([l, v]) => (
+                          <View style={styles.reviewRow} key={l}>
+                            <Text style={styles.reviewLabel}>{l}</Text>
+                            <Text style={styles.reviewValue}>{v || "—"}</Text>
+                          </View>
+                        ))}
+                      </View>
+                      <View style={styles.reviewDivider} />
+                      <View style={styles.reviewSection}>
+                        <Text style={styles.reviewSectionTitle}>Old NIC Details</Text>
+                        {[["Old NIC No.", form.oldNicNumber], ["Issue Date", form.oldNicIssueDate], ["Reason", form.reason]].map(([l, v]) => (
+                          <View style={styles.reviewRow} key={l}>
+                            <Text style={styles.reviewLabel}>{l}</Text>
+                            <Text style={styles.reviewValue}>{v || "—"}</Text>
+                          </View>
+                        ))}
+                      </View>
+                      <View style={styles.reviewDivider} />
+                      <View style={styles.reviewSection}>
+                        <Text style={styles.reviewSectionTitle}>Address</Text>
+                        {[["Address", form.address], ["District", form.district], ["DS Division", form.ds], ["GN Division", form.gn], ["Birth Cert No.", form.birthNo], ["Issue Date", form.birthDate]].map(([l, v]) => (
                           <View style={styles.reviewRow} key={l}>
                             <Text style={styles.reviewLabel}>{l}</Text>
                             <Text style={styles.reviewValue}>{v || "—"}</Text>

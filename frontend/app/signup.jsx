@@ -1,20 +1,20 @@
-import React, { useState } from "react";
-import {
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
-} from "react-native";
+import { router } from "expo-router";
 import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
-  signOut,
 } from "firebase/auth";
-import { auth } from "../services/firebaseAuth";
-import { router } from "expo-router";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
 import { useTheme } from "../constants/useTheme";
+import { auth } from "../services/firebaseAuth";
 
 export default function SignupScreen() {
   const COLORS = useTheme();
@@ -26,16 +26,17 @@ export default function SignupScreen() {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const API_URL = "http://192.168.1.65:5000/api/auth";
 
   const handleSignup = async () => {
     if (
-      nic === "" ||
-      name === "" ||
-      dob === "" ||
-      email === "" ||
-      mobile === "" ||
+      nic.trim() === "" ||
+      name.trim() === "" ||
+      dob.trim() === "" ||
+      email.trim() === "" ||
+      mobile.trim() === "" ||
       password === "" ||
       confirmPassword === ""
     ) {
@@ -48,16 +49,23 @@ export default function SignupScreen() {
       return;
     }
 
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters");
+      return;
+    }
+
     try {
+      setLoading(true);
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        email,
+        email.trim(),
         password,
       );
 
       await sendEmailVerification(userCredential.user);
 
-      const token = await userCredential.user.getIdToken();
+      const token = await userCredential.user.getIdToken(true);
 
       const response = await fetch(`${API_URL}/save-pending-user`, {
         method: "POST",
@@ -66,31 +74,36 @@ export default function SignupScreen() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          nic,
-          name,
-          dob,
-          email,
-          mobile,
+          nic: nic.trim(),
+          name: name.trim(),
+          dob: dob.trim(),
+          email: email.trim(),
+          mobile: mobile.trim(),
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        Alert.alert("Error", data.message);
+        Alert.alert("Error", data.message || "Failed to save pending user");
         return;
       }
 
-      await signOut(auth);
-
       Alert.alert(
-        "Verification Email Sent",
-        "Please check your email, click the verification link, and then login.",
+        "Success",
+        "Account created successfully. Now upload the birth certificate.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.push("/upload-certificate"),
+          },
+        ],
       );
-
-      router.push("/");
     } catch (error) {
-      Alert.alert("Signup Error", error.message);
+      console.log("Signup error:", error);
+      Alert.alert("Signup Error", error.message || "Network request failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,6 +143,11 @@ export default function SignupScreen() {
       marginBottom: 15,
       color: COLORS.text,
     },
+    linkText: {
+      marginTop: 20,
+      color: COLORS.secondary,
+      fontSize: 14,
+    },
     button: {
       width: "100%",
       height: 52,
@@ -144,20 +162,16 @@ export default function SignupScreen() {
       fontSize: 18,
       fontWeight: "bold",
     },
-    linkText: {
-      marginTop: 20,
-      color: COLORS.secondary,
-      fontSize: 14,
-    },
   });
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.logo}>SmartQueue</Text>
-      <Text style={styles.title}>Register</Text>
+    <ScrollView testID="signupScreen" contentContainerStyle={styles.container}>
+      <Text testID="signupLogo" style={styles.logo}>SmartQueue</Text>
+      <Text testID="signupTitle" style={styles.title}>Register</Text>
       <Text style={styles.subtitle}>Create your account</Text>
 
       <TextInput
+        testID="nicInput"
         style={styles.input}
         placeholder="NIC Number"
         placeholderTextColor={COLORS.gray}
@@ -166,6 +180,7 @@ export default function SignupScreen() {
       />
 
       <TextInput
+        testID="nameInput"
         style={styles.input}
         placeholder="Full Name"
         placeholderTextColor={COLORS.gray}
@@ -174,53 +189,72 @@ export default function SignupScreen() {
       />
 
       <TextInput
+        testID="dobInput"
         style={styles.input}
-        placeholder="Date of Birth"
+        placeholder="Date of Birth (DD/MM/YYYY)"
         placeholderTextColor={COLORS.gray}
         value={dob}
         onChangeText={setDob}
       />
 
       <TextInput
+        testID="emailInput"
         style={styles.input}
         placeholder="Email Address"
         placeholderTextColor={COLORS.gray}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
+        keyboardType="email-address"
       />
 
       <TextInput
+        testID="mobileInput"
         style={styles.input}
         placeholder="Mobile Number"
         placeholderTextColor={COLORS.gray}
         value={mobile}
         onChangeText={setMobile}
+        keyboardType="phone-pad"
       />
 
       <TextInput
+        testID="passwordInput"
         style={styles.input}
         placeholder="Password"
         placeholderTextColor={COLORS.gray}
         value={password}
         onChangeText={setPassword}
-        secureTextEntry={true}
+        secureTextEntry
       />
 
       <TextInput
+        testID="confirmPasswordInput"
         style={styles.input}
         placeholder="Confirm Password"
         placeholderTextColor={COLORS.gray}
         value={confirmPassword}
         onChangeText={setConfirmPassword}
-        secureTextEntry={true}
+        secureTextEntry
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleSignup}>
-        <Text style={styles.buttonText}>Register</Text>
+      <TouchableOpacity
+        testID="registerButton"
+        style={[styles.button, loading && { opacity: 0.7 }]}
+        onPress={handleSignup}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator testID="registerLoader" color={COLORS.white} />
+        ) : (
+          <Text style={styles.buttonText}>Register</Text>
+        )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push("/login")}>
+      <TouchableOpacity
+        testID="backToLoginButton"
+        onPress={() => router.push("/login")}
+      >
         <Text style={styles.linkText}>Already have an account? Login</Text>
       </TouchableOpacity>
     </ScrollView>

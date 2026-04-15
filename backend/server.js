@@ -140,7 +140,7 @@ app.put("/api/user/:userId", async (req, res) => {
 });
 
 // ============================================
-// PASSPORT BOOKING - DIRECT ROUTES (BACKUP)
+// PASSPORT BOOKING - DIRECT ROUTES
 // ============================================
 
 // Save personal info (Step 1)
@@ -151,7 +151,6 @@ app.post("/api/passport-booking/save-personal/:userId", async (req, res) => {
 
     console.log('📝 [Passport] Saving personal info for user:', userId);
 
-    // Basic validation
     if (!personalData.fullName || !personalData.dob || !personalData.gender || !personalData.mobile || !personalData.birthplace) {
       return res.status(400).json({
         success: false,
@@ -159,7 +158,6 @@ app.post("/api/passport-booking/save-personal/:userId", async (req, res) => {
       });
     }
 
-    // Phone validation
     const phoneRegex = /^(\+94[0-9]{9}|0[0-9]{9})$/;
     if (!phoneRegex.test(personalData.mobile)) {
       return res.status(400).json({
@@ -168,7 +166,6 @@ app.post("/api/passport-booking/save-personal/:userId", async (req, res) => {
       });
     }
 
-    // Age validation for passport (minimum 16 years)
     if (personalData.dob) {
       const dobParts = personalData.dob.includes('/') ? personalData.dob.split('/') : personalData.dob.split('-');
       let year, month, day;
@@ -217,7 +214,6 @@ app.post("/api/passport-booking/save-identity/:userId", async (req, res) => {
 
     console.log('📝 [Passport] Saving identity info for user:', userId);
 
-    // Check if step 1 exists
     const step1Snapshot = await db.ref(`temp_passport_bookings/${userId}/step1`).once('value');
     if (!step1Snapshot.exists()) {
       return res.status(400).json({
@@ -226,7 +222,6 @@ app.post("/api/passport-booking/save-identity/:userId", async (req, res) => {
       });
     }
 
-    // Basic validation
     if (!identityData.nicNumber || !identityData.nicIssueDate) {
       return res.status(400).json({
         success: false,
@@ -234,7 +229,6 @@ app.post("/api/passport-booking/save-identity/:userId", async (req, res) => {
       });
     }
 
-    // NIC validation
     const nicRegex = /^[0-9]{9}[vVxX]?$|^[0-9]{12}$/;
     if (!nicRegex.test(identityData.nicNumber)) {
       return res.status(400).json({
@@ -269,7 +263,6 @@ app.post("/api/passport-booking/save-family/:userId", async (req, res) => {
 
     console.log('📝 [Passport] Saving family & address info for user:', userId);
 
-    // Check if step 2 exists
     const step2Snapshot = await db.ref(`temp_passport_bookings/${userId}/step2`).once('value');
     if (!step2Snapshot.exists()) {
       return res.status(400).json({
@@ -278,7 +271,6 @@ app.post("/api/passport-booking/save-family/:userId", async (req, res) => {
       });
     }
 
-    // Basic validation
     if (!familyData.address || !familyData.district || !familyData.ds || 
         !familyData.gn || !familyData.fatherName || !familyData.motherName) {
       return res.status(400).json({
@@ -313,7 +305,6 @@ app.post("/api/passport-booking/save-passport-details/:userId", async (req, res)
 
     console.log('📝 [Passport] Saving passport details for user:', userId);
 
-    // Check if step 3 exists
     const step3Snapshot = await db.ref(`temp_passport_bookings/${userId}/step3`).once('value');
     if (!step3Snapshot.exists()) {
       return res.status(400).json({
@@ -322,7 +313,6 @@ app.post("/api/passport-booking/save-passport-details/:userId", async (req, res)
       });
     }
 
-    // Basic validation
     if (!passportData.profession || !passportData.emergencyContact || 
         !passportData.emergencyMobile || !passportData.emergencyRelation) {
       return res.status(400).json({
@@ -353,13 +343,11 @@ app.post("/api/passport-booking/save-passport-details/:userId", async (req, res)
 // PASSPORT TIME SLOT MANAGEMENT
 // ============================================
 
-// Get available time slots for manual selection
 app.get("/api/passport-booking/available-slots", async (req, res) => {
   try {
     const { date } = req.query;
     const targetDate = date || new Date(Date.now() + 86400000).toISOString().split('T')[0];
     
-    // Get existing bookings for target date
     const snapshot = await db.ref('passport_bookings')
       .orderByChild('appointmentInfo/timeslot')
       .once('value');
@@ -385,7 +373,6 @@ app.get("/api/passport-booking/available-slots", async (req, res) => {
     allSlots.forEach(time => {
       const fullSlot = `${targetDate} ${time}`;
       
-      // Determine crowd level
       let crowdLevel;
       if (time.includes('09') || time.includes('10')) {
         crowdLevel = 'Less crowded';
@@ -395,7 +382,6 @@ app.get("/api/passport-booking/available-slots", async (req, res) => {
         crowdLevel = 'Busy';
       }
       
-      // Only add if not booked
       if (!bookedSlots.has(fullSlot)) {
         availableSlots.push({
           date: targetDate,
@@ -419,7 +405,6 @@ app.get("/api/passport-booking/available-slots", async (req, res) => {
   }
 });
 
-// Get AI recommended time slot
 app.get("/api/passport-booking/recommended-slot/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -428,7 +413,6 @@ app.get("/api/passport-booking/recommended-slot/:userId", async (req, res) => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dateString = tomorrow.toISOString().split('T')[0];
     
-    // Get existing bookings
     const snapshot = await db.ref('passport_bookings')
       .orderByChild('appointmentInfo/timeslot')
       .once('value');
@@ -449,10 +433,8 @@ app.get("/api/passport-booking/recommended-slot/:userId", async (req, res) => {
       '03:00 PM', '03:30 PM'
     ];
 
-    // AI Logic: Prefer morning slots (less crowded), avoid booked slots
     let recommendedSlot = null;
     
-    // First try morning slots (9 AM - 11 AM)
     const morningSlots = allSlots.filter(slot => 
       slot.includes('09:') || slot.includes('10:')
     );
@@ -470,7 +452,6 @@ app.get("/api/passport-booking/recommended-slot/:userId", async (req, res) => {
       }
     }
     
-    // If no morning slots, try afternoon slots
     if (!recommendedSlot) {
       for (const slot of allSlots) {
         const fullSlot = `${dateString} ${slot}`;
@@ -508,7 +489,6 @@ app.get("/api/passport-booking/recommended-slot/:userId", async (req, res) => {
 // PASSPORT TEMP DATA RETRIEVAL
 // ============================================
 
-// Get temp data for review
 app.get("/api/passport-booking/temp-data/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -537,7 +517,6 @@ app.get("/api/passport-booking/temp-data/:userId", async (req, res) => {
 // PASSPORT DOCUMENT MANAGEMENT
 // ============================================
 
-// Save uploaded document links
 app.post("/api/passport-booking/save-documents/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -562,7 +541,6 @@ app.post("/api/passport-booking/save-documents/:userId", async (req, res) => {
 // PASSPORT BOOKING CONFIRMATION
 // ============================================
 
-// Confirm passport booking
 app.post("/api/passport-booking/confirm/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -660,7 +638,6 @@ app.post("/api/passport-booking/confirm/:userId", async (req, res) => {
   }
 });
 
-// Create passport appointment from dashboard
 app.post("/api/passport-booking/appointments", async (req, res) => {
   try {
     const appointmentData = req.body;
@@ -721,7 +698,6 @@ app.post("/api/passport-booking/appointments", async (req, res) => {
 // PASSPORT BOOKING RETRIEVAL
 // ============================================
 
-// Get user's passport bookings
 app.get("/api/passport-booking/user-bookings/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -749,7 +725,6 @@ app.get("/api/passport-booking/user-bookings/:userId", async (req, res) => {
   }
 });
 
-// Get single booking details
 app.get("/api/passport-booking/booking/:bookingId", async (req, res) => {
   try {
     const { bookingId } = req.params;
@@ -777,7 +752,6 @@ app.get("/api/passport-booking/booking/:bookingId", async (req, res) => {
   }
 });
 
-// Cancel passport booking
 app.put("/api/passport-booking/cancel/:bookingId", async (req, res) => {
   try {
     const { bookingId } = req.params;
@@ -798,7 +772,6 @@ app.put("/api/passport-booking/cancel/:bookingId", async (req, res) => {
   }
 });
 
-// Reschedule passport booking
 app.put("/api/passport-booking/reschedule/:bookingId", async (req, res) => {
   try {
     const { bookingId } = req.params;
@@ -829,19 +802,16 @@ app.put("/api/passport-booking/reschedule/:bookingId", async (req, res) => {
 });
 
 // ============================================
-// NIC BOOKING - DIRECT ROUTES (BACKUP)
+// NIC BOOKING - DIRECT ROUTES
 // ============================================
 
-// Save personal info (Step 1)
 app.post("/api/nic-booking/save-personal/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     const personalData = req.body;
 
     console.log('📝 Saving personal info for user:', userId);
-    console.log('Data received:', personalData);
 
-    // Basic validation
     if (!personalData.fullName || !personalData.dob || !personalData.gender || !personalData.mobile) {
       return res.status(400).json({
         success: false,
@@ -849,7 +819,6 @@ app.post("/api/nic-booking/save-personal/:userId", async (req, res) => {
       });
     }
 
-    // Phone validation - accept both formats (with +94 or starting with 0)
     const phoneRegex = /^(\+94[0-9]{9}|0[0-9]{9})$/;
     if (!phoneRegex.test(personalData.mobile)) {
       return res.status(400).json({
@@ -876,7 +845,6 @@ app.post("/api/nic-booking/save-personal/:userId", async (req, res) => {
   }
 });
 
-// Save verification info (Step 2)
 app.post("/api/nic-booking/save-verification/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -884,7 +852,6 @@ app.post("/api/nic-booking/save-verification/:userId", async (req, res) => {
 
     console.log('📝 Saving verification info for user:', userId);
 
-    // Basic validation
     if (!verificationData.address || !verificationData.district || !verificationData.ds || 
         !verificationData.gn || !verificationData.birthNo || !verificationData.birthDate || 
         !verificationData.citizenship) {
@@ -894,7 +861,6 @@ app.post("/api/nic-booking/save-verification/:userId", async (req, res) => {
       });
     }
 
-    // Check if personal info exists
     const personalSnapshot = await db.ref(`temp_bookings/${userId}/personalInfo`).once('value');
     if (!personalSnapshot.exists()) {
       return res.status(400).json({
@@ -921,7 +887,6 @@ app.post("/api/nic-booking/save-verification/:userId", async (req, res) => {
   }
 });
 
-// Save renewal step 1
 app.post("/api/nic-booking/save-renewal-step1/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -962,7 +927,6 @@ app.post("/api/nic-booking/save-renewal-step1/:userId", async (req, res) => {
   }
 });
 
-// Save renewal step 2 (Police Report)
 app.post("/api/nic-booking/save-renewal-step2/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -995,7 +959,6 @@ app.post("/api/nic-booking/save-renewal-step2/:userId", async (req, res) => {
   }
 });
 
-// Save renewal step 3 (Address & Documents)
 app.post("/api/nic-booking/save-renewal-step3/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -1032,14 +995,12 @@ app.post("/api/nic-booking/save-renewal-step3/:userId", async (req, res) => {
 // TIME SLOT MANAGEMENT
 // ============================================
 
-// Get available time slots for manual selection
 app.get("/api/nic-booking/available-slots", async (req, res) => {
   try {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dateString = tomorrow.toISOString().split('T')[0];
     
-    // Get existing bookings for tomorrow
     const snapshot = await db.ref('nic_bookings')
       .orderByChild('appointmentInfo/timeslot')
       .once('value');
@@ -1064,7 +1025,6 @@ app.get("/api/nic-booking/available-slots", async (req, res) => {
     allSlots.forEach(time => {
       const fullSlot = `${dateString} ${time}`;
       
-      // Determine crowd level
       let crowdLevel;
       if (time.includes('09') || time.includes('10')) {
         crowdLevel = 'Less crowded';
@@ -1074,7 +1034,6 @@ app.get("/api/nic-booking/available-slots", async (req, res) => {
         crowdLevel = 'Busy';
       }
       
-      // Only add if not booked
       if (!bookedSlots.has(fullSlot)) {
         availableSlots.push({
           date: dateString,
@@ -1098,7 +1057,6 @@ app.get("/api/nic-booking/available-slots", async (req, res) => {
   }
 });
 
-// Get AI recommended time slot
 app.get("/api/nic-booking/recommended-slot/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -1107,7 +1065,6 @@ app.get("/api/nic-booking/recommended-slot/:userId", async (req, res) => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dateString = tomorrow.toISOString().split('T')[0];
     
-    // Get existing bookings
     const snapshot = await db.ref('nic_bookings')
       .orderByChild('appointmentInfo/timeslot')
       .once('value');
@@ -1127,10 +1084,8 @@ app.get("/api/nic-booking/recommended-slot/:userId", async (req, res) => {
       '03:00 PM', '03:30 PM'
     ];
 
-    // AI Logic: Prefer morning slots (less crowded), avoid booked slots
     let recommendedSlot = null;
     
-    // First try morning slots (9 AM - 11 AM)
     const morningSlots = allSlots.filter(slot => 
       slot.includes('09:') || slot.includes('10:')
     );
@@ -1148,7 +1103,6 @@ app.get("/api/nic-booking/recommended-slot/:userId", async (req, res) => {
       }
     }
     
-    // If no morning slots, try afternoon slots
     if (!recommendedSlot) {
       for (const slot of allSlots) {
         const fullSlot = `${dateString} ${slot}`;
@@ -1186,7 +1140,6 @@ app.get("/api/nic-booking/recommended-slot/:userId", async (req, res) => {
 // TEMP DATA RETRIEVAL
 // ============================================
 
-// Get temp data for review
 app.get("/api/nic-booking/temp-data/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -1209,7 +1162,6 @@ app.get("/api/nic-booking/temp-data/:userId", async (req, res) => {
   }
 });
 
-// Get temp renewal data
 app.get("/api/nic-booking/temp-renewal-data/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -1236,7 +1188,6 @@ app.get("/api/nic-booking/temp-renewal-data/:userId", async (req, res) => {
 // DOCUMENT MANAGEMENT
 // ============================================
 
-// Save uploaded document links
 app.post("/api/nic-booking/save-documents/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -1265,7 +1216,6 @@ app.post("/api/nic-booking/save-documents/:userId", async (req, res) => {
 // BOOKING CONFIRMATION
 // ============================================
 
-// Confirm booking (Registration)
 app.post("/api/nic-booking/confirm/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -1326,7 +1276,6 @@ app.post("/api/nic-booking/confirm/:userId", async (req, res) => {
   }
 });
 
-// Confirm renewal booking
 app.post("/api/nic-booking/confirm-renewal/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -1413,7 +1362,6 @@ app.post("/api/nic-booking/confirm-renewal/:userId", async (req, res) => {
 // BOOKING RETRIEVAL
 // ============================================
 
-// Get user's bookings
 app.get("/api/nic-booking/user-bookings/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -1441,7 +1389,6 @@ app.get("/api/nic-booking/user-bookings/:userId", async (req, res) => {
   }
 });
 
-// Cancel booking
 app.put("/api/nic-booking/cancel/:bookingId", async (req, res) => {
   try {
     const { bookingId } = req.params;
@@ -1607,7 +1554,7 @@ app.get("/api/nearby-facilities", async (req, res) => {
 });
 
 // ============================================
-// APPOINTMENTS (Legacy - Keep for compatibility)
+// APPOINTMENTS (Legacy)
 // ============================================
 
 app.post("/api/appointments", async (req, res) => {

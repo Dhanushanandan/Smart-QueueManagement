@@ -1,17 +1,17 @@
-import React, { useState } from "react";
+import { router } from "expo-router";
+import { reload, signInWithEmailAndPassword } from "firebase/auth";
+import { useState } from "react";
 import {
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
-  Image,
 } from "react-native";
-import { signInWithEmailAndPassword, reload } from "firebase/auth";
-import { auth } from "../services/firebaseAuth";
-import { router } from "expo-router";
 import { useTheme } from "../constants/useTheme";
+import { auth } from "../services/firebaseAuth";
 
 export default function LoginScreen() {
   const COLORS = useTheme();
@@ -19,9 +19,8 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
- const API_URL = "http://192.168.1.65:5000/api/auth";
+  const API_URL = "http://192.168.1.65:5000/api/auth";
 
- 
   const handleLogin = async () => {
     if (email === "" || password === "") {
       Alert.alert("Error", "Please enter email and password");
@@ -47,7 +46,6 @@ export default function LoginScreen() {
 
       const token = await userCredential.user.getIdToken(true);
 
-      // check if user already exists in users node
       const checkResponse = await fetch(`${API_URL}/check-user-node`, {
         method: "POST",
         headers: {
@@ -63,14 +61,12 @@ export default function LoginScreen() {
         return;
       }
 
-      // already in users node
       if (checkData.inUsers) {
         Alert.alert("Success", "Login successful");
         router.replace("/dashboard");
         return;
       }
 
-      // still in pendingUsers node, so move it to users
       if (checkData.inPendingUsers) {
         const finalizeResponse = await fetch(`${API_URL}/finalize-user`, {
           method: "POST",
@@ -95,7 +91,6 @@ export default function LoginScreen() {
       Alert.alert("Error", "User data not found");
     } catch (error) {
       try {
-        // auth failed -> check if email exists in pendingUsers
         const pendingResponse = await fetch(`${API_URL}/check-pending-email`, {
           method: "POST",
           headers: {
@@ -130,11 +125,10 @@ export default function LoginScreen() {
       justifyContent: "center",
       padding: 20,
     },
-    // 🔵 Circular Image Style
     logoImage: {
       width: 200,
       height: 120,
-      borderRadius: 10, 
+      borderRadius: 10,
       marginBottom: 15,
     },
     logo: {
@@ -193,16 +187,17 @@ export default function LoginScreen() {
   });
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView testID="loginScreen" contentContainerStyle={styles.container}>
       <Image
+        testID="loginLogoImage"
         source={require("../assets/images/Logo.png")}
         style={styles.logoImage}
       />
-      {/* <Text style={styles.logo}>SmartQueue</Text> */}
-      <Text style={styles.title}>Login</Text>
+      <Text testID="loginTitle" style={styles.title}>Login</Text>
       <Text style={styles.subtitle}>Sign in to your account</Text>
 
       <TextInput
+        testID="loginEmailInput"
         style={styles.input}
         placeholder="Email Address"
         placeholderTextColor={COLORS.gray}
@@ -212,6 +207,7 @@ export default function LoginScreen() {
       />
 
       <TextInput
+        testID="loginPasswordInput"
         style={styles.input}
         placeholder="Password"
         placeholderTextColor={COLORS.gray}
@@ -220,17 +216,16 @@ export default function LoginScreen() {
         secureTextEntry={true}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+      <TouchableOpacity testID="loginButton" style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push("/signup")}>
-        <Text style={styles.linkText}>Don’t have an account? Register</Text>
+      <TouchableOpacity
+        testID="goToRegisterButton"
+        onPress={() => router.push("/signup")}
+      >
+        <Text style={styles.linkText}>Don't have an account? Register</Text>
       </TouchableOpacity>
-
-      <Text style={styles.noteText}>
-        After clicking the verification link in your email, come back and login.
-      </Text>
     </ScrollView>
   );
 }
