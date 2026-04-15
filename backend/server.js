@@ -7,6 +7,7 @@ const serviceAccount = require("./serviceAccountKey.json");
 // 🔥 ROUTES
 const authRoutes = require("./routes/authRoutes");
 const nicBookingRoutes = require("./routes/nicBookingRoutes");
+const passportBookingRoutes = require("./routes/passportBookingRoutes");
 
 dotenv.config();
 
@@ -29,7 +30,8 @@ const app = express();
 // ============================================
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -47,6 +49,9 @@ app.use("/api/auth", authRoutes);
 // NIC Booking routes
 app.use("/api/nic-booking", nicBookingRoutes);
 
+// Passport Booking routes
+app.use("/api/passport-booking", passportBookingRoutes);
+
 // ============================================
 // ROOT
 // ============================================
@@ -57,7 +62,8 @@ app.get("/", (req, res) => {
     version: "1.0.0",
     endpoints: {
       auth: "/api/auth",
-      nicBooking: "/api/nic-booking"
+      nicBooking: "/api/nic-booking",
+      passportBooking: "/api/passport-booking"
     }
   });
 });
@@ -130,6 +136,695 @@ app.put("/api/user/:userId", async (req, res) => {
   } catch (err) {
     console.error('❌ Error updating user:', err);
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ============================================
+// PASSPORT BOOKING - DIRECT ROUTES (BACKUP)
+// ============================================
+
+// Save personal info (Step 1)
+app.post("/api/passport-booking/save-personal/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const personalData = req.body;
+
+    console.log('📝 [Passport] Saving personal info for user:', userId);
+
+    // Basic validation
+    if (!personalData.fullName || !personalData.dob || !personalData.gender || !personalData.mobile || !personalData.birthplace) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please fill all required fields'
+      });
+    }
+
+    // Phone validation
+    const phoneRegex = /^(\+94[0-9]{9}|0[0-9]{9})$/;
+    if (!phoneRegex.test(personalData.mobile)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Mobile number must be 10 digits (e.g., 0771234567 or +94771234567)'
+      });
+    }
+
+    // Age validation for passport (minimum 16 years)
+    if (personalData.dob) {
+      const dobParts = personalData.dob.includes('/') ? personalData.dob.split('/') : personalData.dob.split('-');
+      let year, month, day;
+      if (personalData.dob.includes('/')) {
+        [day, month, year] = dobParts.map(Number);
+      } else {
+        [year, month, day] = dobParts.map(Number);
+      }
+      const birthDate = new Date(year, month - 1, day);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
+      
+      if (age < 16) {
+        return res.status(400).json({
+          success: false,
+          error: 'Applicant must be at least 16 years old for passport'
+        });
+      }
+    }
+
+    await db.ref(`temp_passport_bookings/${userId}/step1`).set({
+      ...personalData,
+      savedAt: Date.now()
+    });
+
+    console.log('✅ [Passport] Personal info saved');
+
+    res.json({
+      success: true,
+      message: 'Personal information saved temporarily',
+      data: personalData
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error saving personal info:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Save identity info (Step 2)
+app.post("/api/passport-booking/save-identity/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const identityData = req.body;
+
+    console.log('📝 [Passport] Saving identity info for user:', userId);
+
+    // Check if step 1 exists
+    const step1Snapshot = await db.ref(`temp_passport_bookings/${userId}/step1`).once('value');
+    if (!step1Snapshot.exists()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please complete personal information first'
+      });
+    }
+
+    // Basic validation
+    if (!identityData.nicNumber || !identityData.nicIssueDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'NIC number and issue date are required'
+      });
+    }
+
+    // NIC validation
+    const nicRegex = /^[0-9]{9}[vVxX]?$|^[0-9]{12}$/;
+    if (!nicRegex.test(identityData.nicNumber)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid NIC number format (9 digits + V/X or 12 digits)'
+      });
+    }
+
+    await db.ref(`temp_passport_bookings/${userId}/step2`).set({
+      ...identityData,
+      savedAt: Date.now()
+    });
+
+    console.log('✅ [Passport] Identity info saved');
+
+    res.json({
+      success: true,
+      message: 'Identity information saved temporarily',
+      data: identityData
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error saving identity info:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Save family & address info (Step 3)
+app.post("/api/passport-booking/save-family/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const familyData = req.body;
+
+    console.log('📝 [Passport] Saving family & address info for user:', userId);
+
+    // Check if step 2 exists
+    const step2Snapshot = await db.ref(`temp_passport_bookings/${userId}/step2`).once('value');
+    if (!step2Snapshot.exists()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please complete identity information first'
+      });
+    }
+
+    // Basic validation
+    if (!familyData.address || !familyData.district || !familyData.ds || 
+        !familyData.gn || !familyData.fatherName || !familyData.motherName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please fill all required fields'
+      });
+    }
+
+    await db.ref(`temp_passport_bookings/${userId}/step3`).set({
+      ...familyData,
+      savedAt: Date.now()
+    });
+
+    console.log('✅ [Passport] Family & address info saved');
+
+    res.json({
+      success: true,
+      message: 'Family and address information saved temporarily',
+      data: familyData
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error saving family info:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Save passport details (Step 4)
+app.post("/api/passport-booking/save-passport-details/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const passportData = req.body;
+
+    console.log('📝 [Passport] Saving passport details for user:', userId);
+
+    // Check if step 3 exists
+    const step3Snapshot = await db.ref(`temp_passport_bookings/${userId}/step3`).once('value');
+    if (!step3Snapshot.exists()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please complete family information first'
+      });
+    }
+
+    // Basic validation
+    if (!passportData.profession || !passportData.emergencyContact || 
+        !passportData.emergencyMobile || !passportData.emergencyRelation) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please fill all required fields'
+      });
+    }
+
+    await db.ref(`temp_passport_bookings/${userId}/step4`).set({
+      ...passportData,
+      savedAt: Date.now()
+    });
+
+    console.log('✅ [Passport] Passport details saved');
+
+    res.json({
+      success: true,
+      message: 'Passport details saved temporarily',
+      data: passportData
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error saving passport details:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// PASSPORT TIME SLOT MANAGEMENT
+// ============================================
+
+// Get available time slots for manual selection
+app.get("/api/passport-booking/available-slots", async (req, res) => {
+  try {
+    const { date } = req.query;
+    const targetDate = date || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    
+    // Get existing bookings for target date
+    const snapshot = await db.ref('passport_bookings')
+      .orderByChild('appointmentInfo/timeslot')
+      .once('value');
+    
+    const bookings = snapshot.val() || {};
+    const bookedSlots = new Set();
+    
+    Object.values(bookings).forEach(booking => {
+      if (booking.appointmentInfo?.timeslot && 
+          (booking.appointmentInfo.status === 'confirmed' || booking.appointmentInfo.status === 'upcoming')) {
+        bookedSlots.add(booking.appointmentInfo.timeslot);
+      }
+    });
+
+    const allSlots = [
+      '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM',
+      '11:30 AM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+      '03:00 PM', '03:30 PM'
+    ];
+
+    const availableSlots = [];
+    
+    allSlots.forEach(time => {
+      const fullSlot = `${targetDate} ${time}`;
+      
+      // Determine crowd level
+      let crowdLevel;
+      if (time.includes('09') || time.includes('10')) {
+        crowdLevel = 'Less crowded';
+      } else if (time.includes('11') || time.includes('01') || time.includes('02')) {
+        crowdLevel = 'Moderate';
+      } else {
+        crowdLevel = 'Busy';
+      }
+      
+      // Only add if not booked
+      if (!bookedSlots.has(fullSlot)) {
+        availableSlots.push({
+          date: targetDate,
+          time: time,
+          fullSlot: fullSlot,
+          crowdLevel: crowdLevel,
+          available: true
+        });
+      }
+    });
+
+    console.log(`📅 [Passport] Available slots for ${targetDate}: ${availableSlots.length}`);
+
+    res.json({
+      success: true,
+      data: availableSlots
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error getting available slots:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get AI recommended time slot
+app.get("/api/passport-booking/recommended-slot/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateString = tomorrow.toISOString().split('T')[0];
+    
+    // Get existing bookings
+    const snapshot = await db.ref('passport_bookings')
+      .orderByChild('appointmentInfo/timeslot')
+      .once('value');
+    
+    const bookings = snapshot.val() || {};
+    const bookedSlots = new Set();
+    
+    Object.values(bookings).forEach(booking => {
+      if (booking.appointmentInfo?.timeslot && 
+          (booking.appointmentInfo.status === 'confirmed' || booking.appointmentInfo.status === 'upcoming')) {
+        bookedSlots.add(booking.appointmentInfo.timeslot);
+      }
+    });
+
+    const allSlots = [
+      '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM',
+      '11:30 AM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+      '03:00 PM', '03:30 PM'
+    ];
+
+    // AI Logic: Prefer morning slots (less crowded), avoid booked slots
+    let recommendedSlot = null;
+    
+    // First try morning slots (9 AM - 11 AM)
+    const morningSlots = allSlots.filter(slot => 
+      slot.includes('09:') || slot.includes('10:')
+    );
+    
+    for (const slot of morningSlots) {
+      const fullSlot = `${dateString} ${slot}`;
+      if (!bookedSlots.has(fullSlot)) {
+        recommendedSlot = {
+          date: dateString,
+          time: slot,
+          fullSlot: fullSlot,
+          crowdLevel: 'Less crowded'
+        };
+        break;
+      }
+    }
+    
+    // If no morning slots, try afternoon slots
+    if (!recommendedSlot) {
+      for (const slot of allSlots) {
+        const fullSlot = `${dateString} ${slot}`;
+        if (!bookedSlots.has(fullSlot)) {
+          let crowdLevel = 'Moderate';
+          if (slot.includes('01:') || slot.includes('02:')) crowdLevel = 'Moderate';
+          else if (slot.includes('03:')) crowdLevel = 'Busy';
+          
+          recommendedSlot = {
+            date: dateString,
+            time: slot,
+            fullSlot: fullSlot,
+            crowdLevel: crowdLevel
+          };
+          break;
+        }
+      }
+    }
+
+    if (recommendedSlot) {
+      await db.ref(`temp_passport_bookings/${userId}/recommendedSlot`).set(recommendedSlot);
+    }
+
+    res.json({
+      success: true,
+      data: recommendedSlot || { message: 'No slots available for tomorrow' }
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error getting time slot:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// PASSPORT TEMP DATA RETRIEVAL
+// ============================================
+
+// Get temp data for review
+app.get("/api/passport-booking/temp-data/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const snapshot = await db.ref(`temp_passport_bookings/${userId}`).once('value');
+    const data = snapshot.val() || {};
+    
+    res.json({
+      success: true,
+      data: {
+        ...data.step1,
+        ...data.step2,
+        ...data.step3,
+        ...data.step4,
+        recommendedSlot: data.recommendedSlot || null,
+        documents: data.documents || []
+      }
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error fetching temp data:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// PASSPORT DOCUMENT MANAGEMENT
+// ============================================
+
+// Save uploaded document links
+app.post("/api/passport-booking/save-documents/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { documents } = req.body;
+
+    console.log('📄 [Passport] Saving documents for user:', userId);
+
+    await db.ref(`temp_passport_bookings/${userId}/documents`).set(documents);
+
+    res.json({
+      success: true,
+      message: 'Documents saved successfully',
+      data: documents
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error saving documents:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// PASSPORT BOOKING CONFIRMATION
+// ============================================
+
+// Confirm passport booking
+app.post("/api/passport-booking/confirm/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { timeslot, documents, serviceType } = req.body;
+
+    if (!timeslot) {
+      return res.status(400).json({ success: false, error: 'Time slot is required' });
+    }
+
+    const tempSnapshot = await db.ref(`temp_passport_bookings/${userId}`).once('value');
+    const tempData = tempSnapshot.val() || {};
+
+    if (!tempData.step1 || !tempData.step2 || !tempData.step3 || !tempData.step4) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required information. Please complete all steps.'
+      });
+    }
+
+    const bookingId = `PPT-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    
+    const bookingData = {
+      userId,
+      bookingId,
+      serviceType: serviceType || 'new',
+      personalInfo: {
+        fullName: tempData.step1.fullName || '',
+        fullNameLocal: tempData.step1.fullNameLocal || '',
+        dob: tempData.step1.dob || '',
+        gender: tempData.step1.gender || '',
+        mobile: tempData.step1.mobile || '',
+        birthplace: tempData.step1.birthplace || '',
+      },
+      identityInfo: {
+        nicNumber: tempData.step2.nicNumber || '',
+        nicIssueDate: tempData.step2.nicIssueDate || '',
+        previousPassport: tempData.step2.previousPassport || 'No',
+        previousPassportNo: tempData.step2.previousPassportNo || '',
+        previousIssueDate: tempData.step2.previousIssueDate || '',
+        previousExpiryDate: tempData.step2.previousExpiryDate || '',
+      },
+      familyInfo: {
+        fatherName: tempData.step3.fatherName || '',
+        motherName: tempData.step3.motherName || '',
+        spouseName: tempData.step3.spouseName || '',
+      },
+      addressInfo: {
+        address: tempData.step3.address || '',
+        district: tempData.step3.district || '',
+        dsDivision: tempData.step3.ds || '',
+        gnDivision: tempData.step3.gn || '',
+      },
+      passportDetails: {
+        passportType: tempData.step4.passportType || 'Ordinary',
+        validityPeriod: tempData.step4.validityPeriod || '10 Years',
+        pages: tempData.step4.pages || '36 Pages',
+        profession: tempData.step4.profession || '',
+        educationalQualification: tempData.step4.educationalQualification || '',
+      },
+      emergencyContact: {
+        name: tempData.step4.emergencyContact || '',
+        mobile: tempData.step4.emergencyMobile || '',
+        relation: tempData.step4.emergencyRelation || '',
+      },
+      documents: documents || tempData.documents || [],
+      appointmentInfo: {
+        timeslot,
+        status: 'confirmed',
+        confirmedAt: Date.now(),
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    await db.ref(`passport_bookings/${bookingId}`).set(bookingData);
+    await db.ref(`temp_passport_bookings/${userId}`).remove();
+
+    const queueNumber = `PPT-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+
+    console.log('✅ [Passport] Booking confirmed:', bookingId);
+
+    res.json({
+      success: true,
+      message: 'Passport Appointment confirmed successfully! 🎉',
+      data: {
+        bookingId,
+        queueNumber,
+        timeslot,
+        confirmedAt: bookingData.appointmentInfo.confirmedAt
+      }
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error confirming booking:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Create passport appointment from dashboard
+app.post("/api/passport-booking/appointments", async (req, res) => {
+  try {
+    const appointmentData = req.body;
+
+    console.log('📝 [Passport] Creating appointment from dashboard');
+
+    const bookingId = `PPT-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    
+    const bookingData = {
+      userId: appointmentData.userId,
+      bookingId,
+      serviceType: appointmentData.service || 'passport',
+      personalInfo: {
+        fullName: appointmentData.fullName || '',
+        mobile: appointmentData.phone || '',
+        email: appointmentData.email || '',
+      },
+      addressInfo: {
+        address: appointmentData.address || '',
+      },
+      passportDetails: {
+        passportType: appointmentData.passportType || 'Ordinary',
+        applicationType: appointmentData.applicationType || 'new',
+      },
+      appointmentInfo: {
+        date: appointmentData.date || '',
+        time: appointmentData.time || '',
+        timeslot: `${appointmentData.date} ${appointmentData.time}`,
+        status: 'upcoming',
+        confirmedAt: Date.now(),
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    await db.ref(`passport_bookings/${bookingId}`).set(bookingData);
+
+    const queueNumber = `PPT-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+
+    console.log('✅ [Passport] Appointment created:', bookingId);
+
+    res.json({
+      success: true,
+      message: 'Passport appointment booked successfully!',
+      data: {
+        bookingId,
+        queueNumber,
+        timeslot: bookingData.appointmentInfo.timeslot
+      }
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error creating appointment:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// PASSPORT BOOKING RETRIEVAL
+// ============================================
+
+// Get user's passport bookings
+app.get("/api/passport-booking/user-bookings/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const snapshot = await db.ref('passport_bookings')
+      .orderByChild('userId')
+      .equalTo(userId)
+      .once('value');
+    
+    const bookings = snapshot.val() || {};
+    const bookingList = Object.entries(bookings).map(([id, data]) => ({
+      id,
+      ...data
+    }));
+
+    bookingList.sort((a, b) => b.createdAt - a.createdAt);
+
+    res.json({
+      success: true,
+      data: bookingList
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error fetching bookings:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get single booking details
+app.get("/api/passport-booking/booking/:bookingId", async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    
+    const snapshot = await db.ref(`passport_bookings/${bookingId}`).once('value');
+    const booking = snapshot.val();
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Booking not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: bookingId,
+        ...booking
+      }
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error fetching booking details:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Cancel passport booking
+app.put("/api/passport-booking/cancel/:bookingId", async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    
+    await db.ref(`passport_bookings/${bookingId}`).update({
+      'appointmentInfo/status': 'cancelled',
+      'appointmentInfo/cancelledAt': Date.now(),
+      updatedAt: Date.now()
+    });
+
+    res.json({
+      success: true,
+      message: 'Booking cancelled successfully'
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error cancelling booking:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Reschedule passport booking
+app.put("/api/passport-booking/reschedule/:bookingId", async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { timeslot } = req.body;
+
+    if (!timeslot) {
+      return res.status(400).json({
+        success: false,
+        error: 'New time slot is required'
+      });
+    }
+
+    await db.ref(`passport_bookings/${bookingId}`).update({
+      'appointmentInfo/timeslot': timeslot,
+      'appointmentInfo/rescheduledAt': Date.now(),
+      updatedAt: Date.now()
+    });
+
+    res.json({
+      success: true,
+      message: 'Booking rescheduled successfully',
+      data: { timeslot }
+    });
+  } catch (error) {
+    console.error('❌ [Passport] Error rescheduling booking:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -768,6 +1463,150 @@ app.put("/api/nic-booking/cancel/:bookingId", async (req, res) => {
 });
 
 // ============================================
+// ANNOUNCEMENTS
+// ============================================
+
+app.get("/api/announcements", async (req, res) => {
+  try {
+    const defaultAnnouncements = [
+      {
+        id: "1",
+        title: "System Maintenance",
+        description: "Scheduled maintenance on Sunday 10 PM - 2 AM",
+        icon: "construct-outline",
+        color: "#F59E0B"
+      },
+      {
+        id: "2",
+        title: "New Service Available",
+        description: "Passport applications now available online",
+        icon: "airplane-outline",
+        color: "#3B82F6"
+      },
+      {
+        id: "3",
+        title: "Holiday Notice",
+        description: "Offices closed on Poya Day",
+        icon: "calendar-outline",
+        color: "#10B981"
+      }
+    ];
+
+    const snapshot = await db.ref("announcements").once("value");
+    const data = snapshot.val();
+    
+    if (data) {
+      res.json({ success: true, data: Object.values(data) });
+    } else {
+      await db.ref("announcements").set(defaultAnnouncements);
+      res.json({ success: true, data: defaultAnnouncements });
+    }
+  } catch (error) {
+    console.error('❌ Error fetching announcements:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// SERVICE ARRANGEMENTS
+// ============================================
+
+app.get("/api/service-arrangements", async (req, res) => {
+  try {
+    const defaultArrangements = [
+      {
+        title: "NIC Services",
+        description: "Counter 1-5 • Ground Floor",
+        icon: "card-account-details-outline",
+        color: "#3B82F6"
+      },
+      {
+        title: "Passport Services",
+        description: "Counter 6-10 • First Floor",
+        icon: "airplane",
+        color: "#0F172A"
+      },
+      {
+        title: "Driving License",
+        description: "Counter 11-15 • Second Floor",
+        icon: "car",
+        color: "#10B981"
+      }
+    ];
+
+    const snapshot = await db.ref("serviceArrangements").once("value");
+    const data = snapshot.val();
+    
+    if (data) {
+      res.json({ success: true, data: Object.values(data) });
+    } else {
+      await db.ref("serviceArrangements").set(defaultArrangements);
+      res.json({ success: true, data: defaultArrangements });
+    }
+  } catch (error) {
+    console.error('❌ Error fetching service arrangements:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+app.get("/api/notifications/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const snapshot = await db.ref(`notifications/${userId}`).once("value");
+    const data = snapshot.val() || {};
+    
+    const notifications = Object.entries(data).map(([id, value]) => ({
+      id,
+      ...value
+    })).sort((a, b) => b.createdAt - a.createdAt);
+
+    res.json({ success: true, data: notifications });
+  } catch (error) {
+    console.error('❌ Error fetching notifications:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.put("/api/notifications/:userId/:notificationId", async (req, res) => {
+  try {
+    const { userId, notificationId } = req.params;
+    
+    await db.ref(`notifications/${userId}/${notificationId}`).update({
+      read: true,
+      readAt: Date.now()
+    });
+
+    res.json({ success: true, message: 'Notification marked as read' });
+  } catch (error) {
+    console.error('❌ Error updating notification:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// NEARBY FACILITIES
+// ============================================
+
+app.get("/api/nearby-facilities", async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        url: "https://www.google.com/maps/search/Department+of+Immigration+and+Emigration+Sri+Lanka"
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error getting nearby facilities:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
 // APPOINTMENTS (Legacy - Keep for compatibility)
 // ============================================
 
@@ -921,6 +1760,10 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`🗄️  Database: Firebase Realtime Database`);
   console.log(`📍 Local: http://localhost:${PORT}`);
   console.log(`📍 Network: http://192.168.1.65:${PORT}`);
+  console.log(`📋 Available endpoints:`);
+  console.log(`   - /api/auth`);
+  console.log(`   - /api/nic-booking`);
+  console.log(`   - /api/passport-booking`);
 });
 
 module.exports = app;
