@@ -1,26 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
+import { FontAwesome5, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Camera, CameraView } from "expo-camera";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
-  View,
-  StyleSheet,
-  Text,
-  ScrollView,
-  SafeAreaView,
-  TouchableOpacity,
-  Modal,
   Alert,
-  StatusBar,
-  RefreshControl,
   Dimensions,
   Linking,
-  TextInput,
+  Modal,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Switch,
-  Platform,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
-import { Camera, CameraView } from "expo-camera";
 import { auth } from "../services/firebaseAuth";
-import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -297,7 +296,7 @@ export default function UserDashboard() {
   // Check if NIC service is selected
   if (service.id === "nic") {
     // Navigate to NIC Booking screen
-    router.push("/nic-booking");
+    router.push("/NIC_Bookings/nic-booking");
   } else {
     // Show booking form modal for other services
     setBookingFormVisible(true);
