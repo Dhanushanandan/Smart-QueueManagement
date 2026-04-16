@@ -3,6 +3,8 @@
 # dependencies
 node_modules/
 
+Smart-QueueManagement.iml
+
 # Expo
 .expo/
 dist/
@@ -44,3 +46,5 @@ app-example
 
 
 backend/serviceAccountKey.json
+/.idea/modules.xml
+/.idea/vcs.xml
