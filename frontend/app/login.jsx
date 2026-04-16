@@ -19,7 +19,8 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const API_URL = "http://192.168.251.40:5000/api/auth";
+  // const API_URL = 'http://192.168.251.40:5000/api';
+  const API_URL = process.env.EXPO_PUBLIC_AUTH_API_URL;
 
   const handleLogin = async () => {
     if (email === "" || password === "") {
@@ -56,8 +57,14 @@ export default function LoginScreen() {
 
       const checkData = await checkResponse.json();
 
+      console.log("check-user-node status:", checkResponse.status);
+      console.log("check-user-node response:", checkData);
+
       if (!checkResponse.ok) {
-        Alert.alert("Error", checkData.message || "Something went wrong");
+        Alert.alert(
+          "Error",
+          checkData.message || `Backend error: ${checkResponse.status}`,
+        );
         return;
       }
 
@@ -78,8 +85,15 @@ export default function LoginScreen() {
 
         const finalizeData = await finalizeResponse.json();
 
+        console.log("finalize-user status:", finalizeResponse.status);
+        console.log("finalize-user response:", finalizeData);
+
         if (!finalizeResponse.ok) {
-          Alert.alert("Error", finalizeData.message || "Failed to move user");
+          Alert.alert(
+            "Error",
+            finalizeData.message ||
+              `Finalize failed: ${finalizeResponse.status}`,
+          );
           return;
         }
 
@@ -193,7 +207,9 @@ export default function LoginScreen() {
         source={require("../assets/images/Logo.png")}
         style={styles.logoImage}
       />
-      <Text testID="loginTitle" style={styles.title}>Login</Text>
+      <Text testID="loginTitle" style={styles.title}>
+        Login
+      </Text>
       <Text style={styles.subtitle}>Sign in to your account</Text>
 
       <TextInput
@@ -216,7 +232,11 @@ export default function LoginScreen() {
         secureTextEntry={true}
       />
 
-      <TouchableOpacity testID="loginButton" style={styles.button} onPress={handleLogin}>
+      <TouchableOpacity
+        testID="loginButton"
+        style={styles.button}
+        onPress={handleLogin}
+      >
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
 

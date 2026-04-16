@@ -28,7 +28,8 @@ export default function SignupScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const API_URL = "http://192.168.251.40:5000/api/auth";
+  // const API_URL = 'http://192.168.251.40:5000/api';
+  const API_URL = process.env.EXPO_PUBLIC_AUTH_API_URL;
 
   const handleSignup = async () => {
     if (
@@ -161,8 +162,12 @@ export default function SignupScreen() {
 
   return (
     <ScrollView testID="signupScreen" contentContainerStyle={styles.container}>
-      <Text testID="signupLogo" style={styles.logo}>SmartQueue</Text>
-      <Text testID="signupTitle" style={styles.title}>Register</Text>
+      <Text testID="signupLogo" style={styles.logo}>
+        SmartQueue
+      </Text>
+      <Text testID="signupTitle" style={styles.title}>
+        Register
+      </Text>
       <Text style={styles.subtitle}>Create your account</Text>
 
       <TextInput

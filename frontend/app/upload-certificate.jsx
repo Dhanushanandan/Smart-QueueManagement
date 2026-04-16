@@ -32,7 +32,8 @@ export default function UploadCertificateScreen() {
     rawText: "",
   });
 
-  const API_URL = "http://192.168.251.40:5000/api/auth";
+  // const API_URL = "http://192.168.251.40:5000/api";
+  const API_URL = process.env.EXPO_PUBLIC_AUTH_API_URL;
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -157,7 +158,7 @@ export default function UploadCertificateScreen() {
             text: "OK",
             onPress: () => router.replace("/login"),
           },
-        ]
+        ],
       );
     } catch (error) {
       Alert.alert("Error", error.message || "Save failed");
@@ -233,7 +234,10 @@ export default function UploadCertificateScreen() {
   });
 
   return (
-    <ScrollView testID="uploadCertificateScreen" contentContainerStyle={styles.container}>
+    <ScrollView
+      testID="uploadCertificateScreen"
+      contentContainerStyle={styles.container}
+    >
       <Text testID="uploadCertificateTitle" style={styles.title}>
         Upload Birth Certificate
       </Text>
