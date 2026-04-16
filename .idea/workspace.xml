@@ -36,6 +36,7 @@
     &quot;accountId&quot;: &quot;ce211f7a-177e-40de-9f2d-0d26e02022b9&quot;
   }
 }</component>
+  <component name="KubernetesApiPersistence"><![CDATA[{}]]></component>
   <component name="KubernetesApiProvider"><![CDATA[{
   "isMigrated": true
 }]]></component>
@@ -105,7 +106,7 @@
       <workItem from="1776359624382" duration="38000" />
       <workItem from="1776359710572" duration="2789000" />
       <workItem from="1776362566691" duration="75000" />
-      <workItem from="1776362665784" duration="632000" />
+      <workItem from="1776362665784" duration="1002000" />
     </task>
     <task id="LOCAL-00001" summary="init.">
       <option name="closed" value="true" />
@@ -131,7 +132,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776362938473</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="init.">
+      <option name="closed" value="true" />
+      <created>1776363462771</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1776363462771</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
