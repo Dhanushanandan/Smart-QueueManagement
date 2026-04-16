@@ -4,82 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f71ed23e-e662-48ae-8041-719ab6ec5b27" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.vscode/extensions.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/.env" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/controllers/LicenseBookingController.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/controllers/NICBookingController.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/controllers/PassportBookingController.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/controllers/authController.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/controllers/dashboardController.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/eng.traineddata" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/firebaseAdmin.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/middleware/authMiddleware.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/models/LicenseBookingModel.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/models/NICBookingModel.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/models/PassportBookingModel.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/package-lock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/routes/authRoutes.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/routes/dashboardRoutes.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/routes/licenseBookingRoutes.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/routes/nicBookingRoutes.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/routes/passportBookingRoutes.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/server.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/service-account.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/.env" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/License_Bookings/license-booking.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/NIC_Bookings/nic-booking.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/Passport_Bookings/passport-booking.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/_layout.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/dashboard.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/index.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/login.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/signup.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/upload-certificate.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/assets/images/Logo.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/assets/images/android-icon-background.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/assets/images/android-icon-foreground.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/assets/images/android-icon-monochrome.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/assets/images/favicon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/assets/images/icon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/assets/images/partial-react-logo.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/assets/images/react-logo.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/assets/images/react-logo@2x.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/assets/images/react-logo@3x.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/assets/images/splash-icon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/external-link.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/haptic-tab.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/hello-wave.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/parallax-scroll-view.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/themed-text.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/themed-view.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/ui/collapsible.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/ui/icon-symbol.ios.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/ui/icon-symbol.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/constants/theme.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/constants/useTheme.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/eslint.config.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/hooks/use-color-scheme.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/hooks/use-color-scheme.web.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/hooks/use-theme-color.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/services/documentAiService.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/services/firebaseAuth.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/styles/license-booking.styles.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/styles/nic-booking.styles.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/styles/passport-booking.styles.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/tsconfig.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/utils/documentPicker.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/selenium-tests/check.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/selenium-tests/package-lock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/selenium-tests/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/selenium-tests/test.js" beforeDir="false" />
-    </list>
+    <list default="true" id="f71ed23e-e662-48ae-8041-719ab6ec5b27" name="Changes" comment="init." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -97,6 +22,7 @@
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -132,8 +58,9 @@
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.0",
+    "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
     "ts.external.directory.path": "C:\\Users\\Sasidula\\Desktop\\Smart-QueueManagement\\frontend\\node_modules\\typescript\\lib",
     "vue.rearranger.settings.migration": "true"
   }
@@ -148,36 +75,7 @@
     </option>
   </component>
   <component name="RunManager">
-    <configuration default="true" type="JetRunConfigurationType">
-      <module name="Smart-QueueManagement" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="server.js" type="NodeJSConfigurationType" temporary="true" nameIsGenerated="true" path-to-js-file="$PROJECT_DIR$/backend/server.js" working-dir="$PROJECT_DIR$/backend">
-      <method v="2" />
-    </configuration>
-    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
-      <module name="Smart-QueueManagement" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
     <recent_temporary>
@@ -202,8 +100,19 @@
       <option name="presentableId" value="Default" />
       <updated>1776359621638</updated>
       <workItem from="1776359624382" duration="38000" />
-      <workItem from="1776359710572" duration="2403000" />
+      <workItem from="1776359710572" duration="2789000" />
+      <workItem from="1776362566691" duration="75000" />
+      <workItem from="1776362665784" duration="96000" />
     </task>
+    <task id="LOCAL-00001" summary="init.">
+      <option name="closed" value="true" />
+      <created>1776362351121</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1776362351121</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -219,6 +128,10 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="init." />
+    <option name="LAST_COMMIT_MESSAGE" value="init." />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>
