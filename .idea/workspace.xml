@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f71ed23e-e662-48ae-8041-719ab6ec5b27" name="Changes" comment="init." />
+    <list default="true" id="f71ed23e-e662-48ae-8041-719ab6ec5b27" name="Changes" comment="init 2.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Smart-QueueManagement.iml" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -78,6 +81,12 @@
       </map>
     </option>
   </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Sasidula\Desktop\Smart-QueueManagement" />
+      <recent name="C:\Users\Sasidula\Desktop\Smart-QueueManagement\smart-line-backend" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="server.js" type="NodeJSConfigurationType" temporary="true" nameIsGenerated="true" path-to-js-file="$PROJECT_DIR$/backend/server.js" working-dir="$PROJECT_DIR$/backend">
       <method v="2" />
@@ -106,7 +115,7 @@
       <workItem from="1776359624382" duration="38000" />
       <workItem from="1776359710572" duration="2789000" />
       <workItem from="1776362566691" duration="75000" />
-      <workItem from="1776362665784" duration="1002000" />
+      <workItem from="1776362665784" duration="1269000" />
     </task>
     <task id="LOCAL-00001" summary="init.">
       <option name="closed" value="true" />
@@ -140,7 +149,47 @@
       <option name="project" value="LOCAL" />
       <updated>1776363462771</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="init.">
+      <option name="closed" value="true" />
+      <created>1776363689592</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1776363689592</updated>
+    </task>
+    <task id="LOCAL-00006" summary="init.">
+      <option name="closed" value="true" />
+      <created>1776363754467</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1776363754467</updated>
+    </task>
+    <task id="LOCAL-00007" summary="init.">
+      <option name="closed" value="true" />
+      <created>1776363763824</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1776363763824</updated>
+    </task>
+    <task id="LOCAL-00008" summary="init.">
+      <option name="closed" value="true" />
+      <created>1776363786542</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1776363786542</updated>
+    </task>
+    <task id="LOCAL-00009" summary="init 2.">
+      <option name="closed" value="true" />
+      <created>1776363794670</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1776363794670</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -175,7 +224,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="init." />
-    <option name="LAST_COMMIT_MESSAGE" value="init." />
+    <MESSAGE value="init 2." />
+    <option name="LAST_COMMIT_MESSAGE" value="init 2." />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>
