@@ -36,6 +36,9 @@
     &quot;accountId&quot;: &quot;ce211f7a-177e-40de-9f2d-0d26e02022b9&quot;
   }
 }</component>
+  <component name="KubernetesApiProvider"><![CDATA[{
+  "isMigrated": true
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 2
 }</component>
@@ -102,7 +105,7 @@
       <workItem from="1776359624382" duration="38000" />
       <workItem from="1776359710572" duration="2789000" />
       <workItem from="1776362566691" duration="75000" />
-      <workItem from="1776362665784" duration="96000" />
+      <workItem from="1776362665784" duration="632000" />
     </task>
     <task id="LOCAL-00001" summary="init.">
       <option name="closed" value="true" />
@@ -112,15 +115,47 @@
       <option name="project" value="LOCAL" />
       <updated>1776362351121</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="init.">
+      <option name="closed" value="true" />
+      <created>1776362929921</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1776362929921</updated>
+    </task>
+    <task id="LOCAL-00003" summary="init.">
+      <option name="closed" value="true" />
+      <created>1776362938473</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1776362938473</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
+    <option name="OPEN_GENERIC_TABS">
+      <map>
+        <entry key="4af10347-b724-4d57-a0e4-940d34c3a883" value="TOOL_WINDOW" />
+      </map>
+    </option>
     <option name="TAB_STATES">
       <map>
+        <entry key="4af10347-b724-4d57-a0e4-940d34c3a883">
+          <value>
+            <State>
+              <option name="CUSTOM_BOOLEAN_PROPERTIES">
+                <map>
+                  <entry key="Show.Git.Branches" value="true" />
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
         <entry key="MAIN">
           <value>
             <State />
