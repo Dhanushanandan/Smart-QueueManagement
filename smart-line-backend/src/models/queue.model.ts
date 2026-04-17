@@ -14,7 +14,4 @@ export interface Queue {
 
     avgServiceTime?: number;
     status?: 'active' | 'paused' | 'closed';
-
-    createdAt: Date;
-    updatedAt: Date;
 }
