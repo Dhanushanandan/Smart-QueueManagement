@@ -17,6 +17,8 @@ export const getPredictionWithService = async (
 
     const data = await res.json();
 
+    console.log("For", service, "prediction data:", data);
+
     if (!res.ok) {
         throw new Error(data.error || 'Prediction failed');
     }

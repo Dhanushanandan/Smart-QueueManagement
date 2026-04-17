@@ -48,6 +48,11 @@ def predict():
         # PREDICT
         prediction = model.predict(input_data)[0]
 
+        print(f"Received data: {data}")
+        print(f"Encoded category: {category_encoded}")
+        print(f"Input data for model: {input_data}")
+        print(f"Predicted wait time: {prediction}")
+
         return jsonify({
             "estimatedWaitTime": round(float(prediction), 2),
             "meta": {
