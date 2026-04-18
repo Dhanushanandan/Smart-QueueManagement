@@ -6,18 +6,9 @@ smartline-d94b4-firebase-adminsdk-fbsvc-820ad2c09d.json
 /httpRequests/
 # Environment-dependent path to Maven home directory
 /mavenHomeManager.xml
-# Datasource local storage ignored files
+# Datasource locl storage ignored files
 /dataSources/
 /dataSources.local.xml
-0
-# =========================
-# General
-# =========================
-#.DS_Store
-#Thumbs.db
-#*.log
-#*.tmp
-#*.swp
 
 # =========================
 # Node / Express.js
@@ -39,56 +30,44 @@ build/
 .out/
 
 # Logs
-#logs/
+/.idea/
+.idea/workspace.xml
+/.idea/workspace.xml
 
-# =========================
-# Expo / React Native
-# =========================
-#.expo/
-#.expo-shared/
 
-# React Native packager
-#.metro-cache/
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
-# Expo build
-#web-build/
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 
-# Native folders (if using Expo prebuild)
-#android/
-#ios/
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
 
-# Expo config (optional to ignore)
-# app.json
-# app.config.js
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# =========================
-# Python
-# =========================
-#__pycache__/
-#*.py[cod]
-#*$py.class
+### VS Code ###
+.vscode/
 
-# Virtual environments
-#venv/
-#.env/
-#.venv/
-
-# Testing / coverage
-#.coverage
-#coverage.xml
-#htmlcov/
-#.pytest_cache/
-
-# Jupyter Notebook
-#.ipynb_checkpoints/
-
-# =========================
-# IDEs / Editors
-# =========================
-#.vscode/
-#.idea/
-
-# =========================
-# OS-specific
-# =========================
-#*.swo
+.gitattributes
+mvnw
+mvnw.cmd
