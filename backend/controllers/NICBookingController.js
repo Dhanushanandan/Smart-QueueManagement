@@ -389,7 +389,7 @@ class NICBookingController {
         timeslot,
       };
 
-      const actualUserId = tempData.personalInfo?.authUserId || userId;
+      // const actualUserId = tempData.personalInfo?.authUserId || userId;
       const bookingData = this.model.formatBookingData(
         actualUserId,
         completeData,
