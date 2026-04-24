@@ -1,76 +1,131 @@
 # 🚀 Smart Queue Management System (AI-Based)
 
-A modern AI-powered queue management application built as part of the Agile Development Coursework at NIBM.
+<p align="center">
+  <img src="https://img.shields.io/badge/Frontend-React%20Native-blue?style=for-the-badge&logo=react" />
+  <img src="https://img.shields.io/badge/Backend-Node.js-green?style=for-the-badge&logo=node.js" />
+  <img src="https://img.shields.io/badge/AI-Python%20OCR-red?style=for-the-badge&logo=python" />
+  <img src="https://img.shields.io/badge/Database-Firebase-orange?style=for-the-badge&logo=firebase" />
+  <img src="https://img.shields.io/badge/Agile-Scrum-purple?style=for-the-badge&logo=jira" />
+</p>
 
-## Overview
-The system replaces traditional physical queues in government services (NIC, Passport, Driving License) with a digital, intelligent appointment system powered by AI.
+---
 
-## Key Features
-- OTP Login & Registration
-- Document Upload (NIC / Passport / Driving License)
-- AI OCR Extraction (Name, DOB, ID)
-- Automatic Validation
-- Appointment Booking
-- Smart Time Slot Recommendation
-- Token Generation
-- Dashboard & History
+## 📌 Overview
+A modern **AI-powered queue management application** that replaces traditional physical queues in government services such as **NIC, Passport, and Driving License** with a **smart digital system**.
 
-## Tech Stack
-- React Native (Expo)
-- Node.js + Express
-- Python (AI / OCR)
-- Firebase Realtime Database
-- Firebase Authentication
+---
 
-## Project Structure
+## ✨ Key Features
+
+- 🔐 OTP Login & Secure Registration  
+- 📄 Document Upload (NIC / Passport / License)  
+- 🤖 AI OCR Extraction (Name, DOB, ID)  
+- ✅ Automatic Data Validation  
+- 📅 Appointment Booking System  
+- 🧠 Smart Time Slot Recommendation  
+- 🎟 Token Generation  
+- 📊 User Dashboard & History  
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|------|----------|
+| 📱 Frontend | React Native (Expo) |
+| ⚙️ Backend | Node.js + Express |
+| 🤖 AI | Python (OCR / ML) |
+| 🗄️ Database | Firebase Realtime DB |
+| 🔐 Auth | Firebase Authentication |
+
+---
+
+## 📂 Project Structure
+
+```
 Smart-QueueManagement/
-├── frontend/
-├── backend/
-├── ai-service/
-├── assets/
-└── README.md
+├── 📁 frontend/
+├── 📁 backend/
+├── 📁 ai-service/
+├── 📁 assets/
+└── 📄 README.md
+```
 
-## Setup
+---
 
-### Clone
+## ⚙️ Setup Guide
+
+### 🔽 Clone Repository
+```bash
 git clone https://github.com/Dhanushanandan/Smart-QueueManagement.git
+```
 
-### Frontend
+### 📱 Frontend
+```bash
 cd frontend
 npm install
 npx expo start
+```
 
-### Backend
+### ⚙️ Backend
+```bash
 cd backend
 npm install
 npm start
+```
 
-### AI Service
+### 🤖 AI Service
+```bash
 cd ai-service
 python app.py
+```
 
-## Agile (Scrum)
-- 4 Sprints Completed
-- Jira used for backlog and sprint tracking
-- Burndown & Velocity charts
+---
 
-## Testing
-- Manual Testing
-- Selenium Testing
+## 📊 Agile Development (Scrum)
 
-## Challenges
-- OCR accuracy issues
-- Firebase data structure
-- API integration
-- Git conflicts
+- 📌 4 Sprints Completed  
+- 📋 Managed using Jira  
+- 📈 Burndown & Velocity Charts  
+- 👥 Team Collaboration  
 
-## Improvements
-- Improve AI accuracy
-- Add push notifications
-- Real-time tracking
+---
 
-## Contributors
-Built by a team of 8 students from NIBM BSc (Hons) Computing, Batch 25.2 as part of the PDSA module coursework.(Group 16 – NIBM)
+## 🧪 Testing
 
-## License
-This project is for academic purposes only.
+- ✅ Manual Testing  
+- 🤖 Selenium Automation Testing  
+
+---
+
+## ⚠️ Challenges
+
+- OCR accuracy issues  
+- Firebase data modeling  
+- API integration errors  
+- Git merge conflicts  
+
+---
+
+## 💡 Future Improvements
+
+- 🚀 Improve AI accuracy  
+- 🔔 Push Notifications  
+- 📡 Real-time Queue Tracking  
+- 🎨 UI/UX Enhancements  
+
+---
+
+## 👨‍💻 Contributors
+
+Built by **Group 16 – NIBM BSc (Hons) Computing (Batch 25.2)**  
+
+---
+
+## 📜 License
+
+📚 Academic Project – For educational purposes only  
+
+---
+
+<p align="center">✨ Made with dedication using Agile & AI ✨</p>
