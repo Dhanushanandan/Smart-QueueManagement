@@ -18,22 +18,42 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // const API_URL = 'http://192.168.251.40:5000/api';
   const API_URL = process.env.EXPO_PUBLIC_AUTH_API_URL;
 
+  const showErrorAlert = (title, message) => {
+    Alert.alert(title, message);
+  };
+
   const handleLogin = async () => {
-    if (email === "" || password === "") {
+    if (loading) return;
+
+    if (email.trim() === "" || password.trim() === "") {
       Alert.alert("Error", "Please enter email and password");
       return;
     }
 
+    if (!API_URL) {
+      Alert.alert(
+        "Configuration Error",
+        "Backend API URL is missing. Please check EXPO_PUBLIC_AUTH_API_URL in your .env file.",
+      );
+      return;
+    }
+
+    setLoading(true);
+
     try {
+      console.log("Login started for:", email.trim());
+
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email.trim(),
         password,
       );
+
+      console.log("Firebase Auth login success:", userCredential.user.email);
 
       await reload(userCredential.user);
 
@@ -42,6 +62,7 @@ export default function LoginScreen() {
           "Verify Your Email",
           "Please verify your email first using the link sent to your email.",
         );
+        setLoading(false);
         return;
       }
 
@@ -61,16 +82,18 @@ export default function LoginScreen() {
       console.log("check-user-node response:", checkData);
 
       if (!checkResponse.ok) {
-        Alert.alert(
-          "Error",
+        showErrorAlert(
+          "Backend Error",
           checkData.message || `Backend error: ${checkResponse.status}`,
         );
+        setLoading(false);
         return;
       }
 
       if (checkData.inUsers) {
         Alert.alert("Success", "Login successful");
-        router.push("/dashboard");
+        setLoading(false);
+        router.replace("/dashboard");
         return;
       }
 
@@ -89,21 +112,30 @@ export default function LoginScreen() {
         console.log("finalize-user response:", finalizeData);
 
         if (!finalizeResponse.ok) {
-          Alert.alert(
-            "Error",
+          showErrorAlert(
+            "Finalize Error",
             finalizeData.message ||
               `Finalize failed: ${finalizeResponse.status}`,
           );
+          setLoading(false);
           return;
         }
 
         Alert.alert("Success", "Login successful");
-        router.push("/dashboard");
+        setLoading(false);
+        router.replace("/dashboard");
         return;
       }
 
-      Alert.alert("Error", "User data not found");
+      showErrorAlert(
+        "User Data Not Found",
+        "Your Firebase account exists, but your user profile was not found in users or pendingUsers.",
+      );
+      setLoading(false);
     } catch (error) {
+      console.log("Firebase login error code:", error?.code);
+      console.log("Firebase login error message:", error?.message);
+
       try {
         const pendingResponse = await fetch(`${API_URL}/check-pending-email`, {
           method: "POST",
@@ -117,17 +149,50 @@ export default function LoginScreen() {
 
         const pendingData = await pendingResponse.json();
 
+        console.log("check-pending-email status:", pendingResponse.status);
+        console.log("check-pending-email response:", pendingData);
+
         if (pendingResponse.ok && pendingData.exists) {
           Alert.alert(
             "Verify Your Email",
             "Your account is in pendingUsers. Please verify your email first.",
           );
-        } else {
-          Alert.alert("Login Error", "Invalid email or password");
+          setLoading(false);
+          return;
         }
       } catch (checkError) {
-        Alert.alert("Login Error", "Invalid email or password");
+        console.log("Pending email check failed:", checkError?.message);
       }
+
+      let errorMessage = "Invalid email or password";
+
+      switch (error?.code) {
+        case "auth/invalid-email":
+          errorMessage = "Invalid email format";
+          break;
+        case "auth/user-not-found":
+          errorMessage = "No user found with this email";
+          break;
+        case "auth/wrong-password":
+          errorMessage = "Incorrect password";
+          break;
+        case "auth/invalid-credential":
+          errorMessage = "Invalid email or password";
+          break;
+        case "auth/network-request-failed":
+          errorMessage =
+            "Network error. Please check your internet connection.";
+          break;
+        case "auth/too-many-requests":
+          errorMessage =
+            "Too many failed attempts. Please try again later.";
+          break;
+        default:
+          errorMessage = error?.message || "Login failed";
+      }
+
+      showErrorAlert("Login Error", errorMessage);
+      setLoading(false);
     }
   };
 
@@ -144,12 +209,6 @@ export default function LoginScreen() {
       height: 120,
       borderRadius: 10,
       marginBottom: 15,
-    },
-    logo: {
-      fontSize: 26,
-      fontWeight: "bold",
-      color: COLORS.primary,
-      marginBottom: 10,
     },
     title: {
       fontSize: 36,
@@ -176,11 +235,12 @@ export default function LoginScreen() {
     button: {
       width: "100%",
       height: 52,
-      backgroundColor: COLORS.primary,
+      backgroundColor: loading ? COLORS.gray : COLORS.primary,
       justifyContent: "center",
       alignItems: "center",
       borderRadius: 25,
       marginTop: 10,
+      opacity: loading ? 0.8 : 1,
     },
     buttonText: {
       color: COLORS.white,
@@ -192,12 +252,6 @@ export default function LoginScreen() {
       color: COLORS.secondary,
       fontSize: 14,
     },
-    noteText: {
-      marginTop: 15,
-      color: COLORS.gray,
-      fontSize: 13,
-      textAlign: "center",
-    },
   });
 
   return (
@@ -207,9 +261,11 @@ export default function LoginScreen() {
         source={require("../assets/images/Logo.png")}
         style={styles.logoImage}
       />
+
       <Text testID="loginTitle" style={styles.title}>
         Login
       </Text>
+
       <Text style={styles.subtitle}>Sign in to your account</Text>
 
       <TextInput
@@ -220,6 +276,7 @@ export default function LoginScreen() {
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
+        keyboardType="email-address"
       />
 
       <TextInput
@@ -236,13 +293,17 @@ export default function LoginScreen() {
         testID="loginButton"
         style={styles.button}
         onPress={handleLogin}
+        disabled={loading}
       >
-        <Text style={styles.buttonText}>Login</Text>
+        <Text style={styles.buttonText}>
+          {loading ? "Logging in..." : "Login"}
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         testID="goToRegisterButton"
         onPress={() => router.push("/signup")}
+        disabled={loading}
       >
         <Text style={styles.linkText}>Don’t have an account? Register</Text>
       </TouchableOpacity>

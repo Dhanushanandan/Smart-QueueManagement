@@ -1,50 +1,139 @@
-# Welcome to Our Smart-Queue mangaement system app 👋
+# 🚀 Smart Queue Management System (AI-Based)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+![React](https://img.shields.io/badge/Frontend-React-blue)
+![Node](https://img.shields.io/badge/Backend-Node.js-green)
+![Firebase](https://img.shields.io/badge/Database-Firebase-orange)
+![AI](https://img.shields.io/badge/AI-OCR-red)
+![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
 
-## Get started
+---
 
-1. Install dependencies
+## 📌 Overview
+The **Smart Queue Management System** is an AI-powered solution designed to eliminate physical queues and optimize appointment booking for government services such as **NIC, Passport, and Driving License**.
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## 🎯 Features
 
-   ```bash
-   npx expo start
-   ```
+### 👤 User
+- Secure Login & Registration (OTP)
+- Upload Documents
+- AI OCR Extraction
+- Appointment Booking
+- Smart Time Slot Suggestions
+- Token Generation
 
-In the output, you'll find options to open the app in a
+### 🏢 Admin
+- Manage Users & Services
+- Manage Appointments
+- View Reports
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 🧑‍💼 Teller
+- View Queue
+- Call Tokens
+- Update Status
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## 🤖 AI Features
+- OCR Data Extraction
+- Document Type Detection
+- Smart Scheduling Algorithm
 
-When you're ready, run:
+---
 
-```bash
-npm run reset-project
+## 🏗️ Architecture
+
+```
+Frontend (React Native)
+    ↓
+Backend (Node.js)
+    ↓
+AI Service (Python)
+    ↓
+Firebase Database
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## 🛠️ Tech Stack
 
-To learn more about developing your project with Expo, look at the following resources:
+- React Native (Expo)
+- Node.js + Express
+- Python (OCR)
+- Firebase
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
+## ⚙️ Setup
 
-Join our community of developers creating universal apps.
+```bash
+git clone https://github.com/your-repo.git
+cd project
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Frontend
+```bash
+cd frontend
+npm install
+npx expo start
+```
+
+### Backend
+```bash
+cd backend
+npm install
+npm start
+```
+
+### AI Service
+```bash
+cd ai-service
+python app.py
+```
+
+---
+
+## 📊 Agile (Scrum)
+
+- 4 Sprints Completed
+- Jira used for backlog & sprint tracking
+- Burndown & Velocity charts
+
+🔗 Jira: https://danushanandan7-1769003355725.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog
+
+---
+
+## 🧪 Testing
+- Manual Testing
+- Selenium Testing
+- Validation Testing
+
+---
+
+## 📷 Screenshots
+(Add your UI screenshots here)
+
+---
+
+## ⚠️ Challenges
+- OCR accuracy
+- API integration
+- Git conflicts
+
+---
+
+## 💡 Future Improvements
+- Push Notifications
+- Real-time Queue Tracking
+- Improved AI accuracy
+
+---
+
+## 👨‍💻 Contributors
+Group 16 – NIBM / Coventry University
+
+---
+
+## 📜 License
+Academic Project
