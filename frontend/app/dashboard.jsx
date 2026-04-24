@@ -5,7 +5,7 @@ import {
 } from "@expo/vector-icons";
 import { Camera, CameraView } from "expo-camera";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -29,6 +29,8 @@ const { width } = Dimensions.get("window");
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function UserDashboard() {
+  const params = useLocalSearchParams();
+
   // State variables
   const [refreshing, setRefreshing] = useState(false);
   const [bookingFormVisible, setBookingFormVisible] = useState(false);
@@ -37,7 +39,7 @@ export default function UserDashboard() {
   const [queueModalVisible, setQueueModalVisible] = useState(false);
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
-  const [activeBookingTab, setActiveBookingTab] = useState("upcoming");
+  const [activeBookingTab, setActiveBookingTab] = useState("ongoing");
   const [activeFooterTab, setActiveFooterTab] = useState("home");
   const [showNotifications, setShowNotifications] = useState(false);
   const [progressWidth, setProgressWidth] = useState(40);
@@ -74,8 +76,8 @@ export default function UserDashboard() {
     totalWaiting: 0,
   });
   const [bookingDetails, setBookingDetails] = useState({
-    upcoming: [],
-    past: [],
+    ongoing: [],
+    all: [],
   });
   const [announcements, setAnnouncements] = useState([]);
   const [serviceArrangements, setServiceArrangements] = useState([]);
@@ -251,6 +253,14 @@ export default function UserDashboard() {
     }
   };
 
+  useEffect(() => {
+    if (params.openBookings === "true") {
+      setDetailsModalVisible(true);
+      setActiveBookingTab(params.bookingTab === "all" ? "all" : "ongoing");
+      setActiveFooterTab("bookings");
+    }
+  }, [params.openBookings, params.bookingTab]);
+
   // Refresh queue
   const handleQueueRefresh = async () => {
     if (!userId) return;
@@ -283,22 +293,19 @@ export default function UserDashboard() {
         const appointments = result.data || [];
 
         const categorized = {
-          upcoming: appointments.filter(
-            (apt) =>
-              apt.status === "upcoming" ||
-              apt.status === "pending" ||
-              apt.status === "confirmed",
+          ongoing: appointments.filter((apt) =>
+            ["upcoming", "pending", "confirmed", "processing"].includes(
+              apt.status,
+            ),
           ),
-          past: appointments.filter(
-            (apt) => apt.status === "completed" || apt.status === "cancelled",
-          ),
+          all: appointments,
         };
 
         setBookingDetails(categorized);
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
-      setBookingDetails({ upcoming: [], past: [] });
+      setBookingDetails({ ongoing: [], all: [] });
     }
   };
 
@@ -743,7 +750,7 @@ export default function UserDashboard() {
           >
             <Ionicons name="checkmark-done-circle" size={20} color="#1E3A8A" />
             <Text style={[styles.statCardNumber, { color: colors.text }]}>
-              {bookingDetails.past?.length || 0}
+              {bookingDetails.all?.length || 0}
             </Text>
             <Text
               style={[styles.statCardLabel, { color: colors.textSecondary }]}
@@ -878,13 +885,35 @@ export default function UserDashboard() {
               >
                 <View style={styles.liveDot} />
                 <Text style={styles.liveText}>
-                  {queueStatus.currentNumber || "A-000"}
+                  {queueStatus.currentNumber ||
+                    queueStatus.queueNumber ||
+                    "A-000"}
                 </Text>
               </View>
             </View>
             <Text style={styles.progressTitle}>
               {queueStatus.serviceName || "No Active Service"}
             </Text>
+            {!!queueStatus.queueNumber && (
+              <Text
+                style={[
+                  styles.queueHint,
+                  { color: colors.textSecondary, marginTop: 4 },
+                ]}
+              >
+                Your Token: {queueStatus.queueNumber}
+              </Text>
+            )}
+            {!!queueStatus.timeslot && (
+              <Text
+                style={[
+                  styles.queueHint,
+                  { color: colors.textSecondary, marginTop: 2 },
+                ]}
+              >
+                Slot: {queueStatus.timeslot}
+              </Text>
+            )}
             <View style={styles.badgeRow}>
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>YOUR POSITION</Text>
@@ -1591,6 +1620,26 @@ export default function UserDashboard() {
               <Text style={[styles.queueCardTitle, { color: colors.text }]}>
                 {queueStatus.serviceName || "No Active Service"}
               </Text>
+              {!!queueStatus.queueNumber && (
+                <Text
+                  style={[
+                    styles.queueCardTime,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Your Token: {queueStatus.queueNumber}
+                </Text>
+              )}
+              {!!queueStatus.timeslot && (
+                <Text
+                  style={[
+                    styles.queueCardTime,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Slot: {queueStatus.timeslot}
+                </Text>
+              )}
               <Text style={[styles.queueCardPosition, { color: "#1E3A8A" }]}>
                 Your Position: #
                 {queueStatus.position.toString().padStart(2, "0")}
@@ -1598,7 +1647,10 @@ export default function UserDashboard() {
               <Text
                 style={[styles.queueCardTime, { color: colors.textSecondary }]}
               >
-                Currently Serving: {queueStatus.currentNumber || "A-000"}
+                Currently Serving:{" "}
+                {queueStatus.currentNumber ||
+                  queueStatus.queueNumber ||
+                  "A-000"}
               </Text>
               <Text
                 style={[
@@ -1661,40 +1713,40 @@ export default function UserDashboard() {
               <TouchableOpacity
                 style={[
                   styles.tab,
-                  activeBookingTab === "upcoming" && styles.activeTab,
+                  activeBookingTab === "ongoing" && styles.activeTab,
                 ]}
-                onPress={() => setActiveBookingTab("upcoming")}
+                onPress={() => setActiveBookingTab("ongoing")}
               >
                 <Text
                   style={[
                     styles.tabText,
-                    activeBookingTab === "upcoming" && styles.activeTabText,
+                    activeBookingTab === "ongoing" && styles.activeTabText,
                   ]}
                 >
-                  Upcoming ({bookingDetails.upcoming?.length || 0})
+                  Ongoing ({bookingDetails.ongoing?.length || 0})
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
                   styles.tab,
-                  activeBookingTab === "past" && styles.activeTab,
+                  activeBookingTab === "all" && styles.activeTab,
                 ]}
-                onPress={() => setActiveBookingTab("past")}
+                onPress={() => setActiveBookingTab("all")}
               >
                 <Text
                   style={[
                     styles.tabText,
-                    activeBookingTab === "past" && styles.activeTabText,
+                    activeBookingTab === "all" && styles.activeTabText,
                   ]}
                 >
-                  Past ({bookingDetails.past?.length || 0})
+                  All ({bookingDetails.all?.length || 0})
                 </Text>
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.bookingList}>
-              {(activeBookingTab === "upcoming"
-                ? bookingDetails.upcoming || []
-                : bookingDetails.past || []
+              {(activeBookingTab === "ongoing"
+                ? bookingDetails.ongoing || []
+                : bookingDetails.all || []
               ).map((booking) => (
                 <View
                   key={booking.id}
@@ -1736,6 +1788,16 @@ export default function UserDashboard() {
                     >
                       {booking.date} at {booking.time}
                     </Text>
+                    {!!booking.queueNumber && (
+                      <Text
+                        style={[
+                          styles.bookingDateTime,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Token: {booking.queueNumber}
+                      </Text>
+                    )}
                   </View>
                   <View
                     style={[

@@ -20,6 +20,87 @@ if (!admin.apps.length) {
 
 const db = admin.database();
 
+
+const ACTIVE_STATUSES = ["upcoming", "pending", "confirmed", "processing"];
+const SERVICE_CONFIG = {
+  nic: { node: "nic_bookings", prefix: "NIC", label: (value) => value.serviceType === "renewal" ? "NIC Renewal" : "NIC Registration" },
+  passport: { node: "passport_bookings", prefix: "PPT", label: (value) => value.serviceType === "renewal" ? "Passport Renewal" : "Passport" },
+  license: { node: "license_bookings", prefix: "DL", label: (value) => value.serviceType === "renewal" ? "Driving License Renewal" : "Driving License" },
+};
+
+const normalizeStatus = (status = "") => (status || "confirmed").toLowerCase();
+
+const parseDateTimeFromTimeslot = (timeslot = "") => {
+  if (!timeslot || typeof timeslot !== "string") {
+    return { date: "", time: "", timestamp: 0 };
+  }
+
+  const trimmed = timeslot.trim();
+  const match = trimmed.match(/^(\d{4}-\d{2}-\d{2})(?:\s+(.*))?$/);
+  let date = "";
+  let time = "";
+
+  if (match) {
+    date = match[1] || "";
+    time = (match[2] || "").trim();
+  } else {
+    const parts = trimmed.split(" ");
+    date = parts[0] || "";
+    time = parts.slice(1).join(" ").trim();
+  }
+
+  let timestamp = 0;
+  if (date && time) {
+    const parsed = new Date(`${date} ${time}`);
+    timestamp = Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+  } else if (date) {
+    const parsed = new Date(date);
+    timestamp = Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+  }
+
+  return { date, time, timestamp };
+};
+
+const buildAppointmentFromBooking = (serviceKey, id, value) => {
+  const info = value.appointmentInfo || {};
+  const parsed = parseDateTimeFromTimeslot(info.timeslot || `${info.date || ""} ${info.time || ""}`.trim());
+  return {
+    id,
+    userId: value.userId || "",
+    source: serviceKey,
+    service: serviceKey,
+    serviceName: SERVICE_CONFIG[serviceKey].label(value),
+    status: normalizeStatus(info.status),
+    date: info.date || parsed.date || "",
+    time: info.time || parsed.time || "",
+    timeslot: info.timeslot || `${info.date || parsed.date || ""} ${info.time || parsed.time || ""}`.trim(),
+    appointmentTimestamp: parsed.timestamp || info.confirmedAt || value.createdAt || 0,
+    createdAt: value.createdAt || 0,
+    queueNumber: info.queueNumber || value.queueNumber || value.bookingId || "",
+    tokenNumber: info.tokenNumber || value.tokenNumber || null,
+    bookingId: value.bookingId || "",
+    fullName: value.personalInfo?.fullName || "",
+  };
+};
+
+const readServiceBookingsForUser = async (serviceKey, userId) => {
+  const snapshot = await db.ref(SERVICE_CONFIG[serviceKey].node).orderByChild("userId").equalTo(userId).once("value");
+  return Object.entries(snapshot.val() || {}).map(([id, value]) => buildAppointmentFromBooking(serviceKey, id, value));
+};
+
+const readAllServiceBookings = async () => {
+  const snapshots = await Promise.all(
+    Object.entries(SERVICE_CONFIG).map(async ([serviceKey, config]) => {
+      const snapshot = await db.ref(config.node).once("value");
+      return [serviceKey, snapshot.val() || {}];
+    })
+  );
+
+  return snapshots.flatMap(([serviceKey, records]) =>
+    Object.entries(records).map(([id, value]) => buildAppointmentFromBooking(serviceKey, id, value))
+  );
+};
+
 // ============================================
 // IMPORT ROUTES
 // ============================================
@@ -27,6 +108,7 @@ const db = admin.database();
 const authRoutes = require("./routes/authRoutes");
 const nicBookingRoutes = require("./routes/nicBookingRoutes");
 const passportBookingRoutes = require("./routes/passportBookingRoutes");
+const licenseBookingRoutes = require("./routes/licenseBookingRoutes");
 
 // ============================================
 // EXPRESS APP
@@ -59,6 +141,7 @@ app.get("/", (req, res) => {
       auth: "/api/auth",
       nicBooking: "/api/nic-booking",
       passportBooking: "/api/passport-booking",
+      licenseBooking: "/api/license-booking",
     },
   });
 });
@@ -82,6 +165,7 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/nic-booking", nicBookingRoutes);
 app.use("/api/passport-booking", passportBookingRoutes);
+app.use("/api/license-booking", licenseBookingRoutes);
 
 // ============================================
 // USERS
@@ -322,12 +406,35 @@ app.post("/api/appointments", async (req, res) => {
 
 app.get("/api/appointments/:userId", async (req, res) => {
   try {
-    const snapshot = await db.ref("appointments").once("value");
-    const data = snapshot.val() || {};
+    const { userId } = req.params;
 
-    const result = Object.entries(data)
-      .map(([id, value]) => ({ id, ...value }))
-      .filter((a) => a.userId === req.params.userId);
+    const [legacySnapshot, nicAppointments, passportAppointments, licenseAppointments] = await Promise.all([
+      db.ref("appointments").once("value"),
+      readServiceBookingsForUser("nic", userId),
+      readServiceBookingsForUser("passport", userId),
+      readServiceBookingsForUser("license", userId),
+    ]);
+
+    const legacyAppointments = Object.entries(legacySnapshot.val() || {})
+      .map(([id, value]) => ({
+        id,
+        ...value,
+        source: "legacy",
+        service: value.service || "appointment",
+        serviceName: value.serviceName || value.service || "Appointment",
+        status: normalizeStatus(value.status),
+        queueNumber: value.queueNumber || value.bookingId || "",
+        tokenNumber: value.tokenNumber || null,
+        appointmentTimestamp: value.createdAt || 0,
+      }))
+      .filter((item) => item.userId === userId);
+
+    const result = [
+      ...legacyAppointments,
+      ...nicAppointments,
+      ...passportAppointments,
+      ...licenseAppointments,
+    ].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
     res.json({ success: true, data: result });
   } catch (err) {
@@ -340,35 +447,76 @@ app.get("/api/appointments/:userId", async (req, res) => {
 // QUEUE
 // ============================================
 
+const buildQueueResponse = async (userId) => {
+  const activeBookings = (await readAllServiceBookings()).filter((item) => ACTIVE_STATUSES.includes(item.status));
+  const userActiveBookings = activeBookings
+    .filter((item) => item.userId === userId)
+    .sort((a, b) => (a.appointmentTimestamp || a.createdAt || 0) - (b.appointmentTimestamp || b.createdAt || 0));
+
+  const activeBooking = userActiveBookings[0];
+
+  if (!activeBooking) {
+    return {
+      position: 0,
+      totalWaiting: 0,
+      estimatedTime: "0 mins",
+      connectionId: "",
+      serviceName: "No Active Service",
+      status: "completed",
+      currentNumber: "A-000",
+      queueNumber: "",
+      tokenNumber: null,
+      timeslot: "",
+      date: "",
+      time: "",
+    };
+  }
+
+  const sameQueue = activeBookings
+    .filter((item) => item.service === activeBooking.service && item.date === activeBooking.date && item.time === activeBooking.time)
+    .sort((a, b) => {
+      const aToken = Number(a.tokenNumber || Number.MAX_SAFE_INTEGER);
+      const bToken = Number(b.tokenNumber || Number.MAX_SAFE_INTEGER);
+      if (aToken !== bToken) return aToken - bToken;
+      return (a.appointmentTimestamp || a.createdAt || 0) - (b.appointmentTimestamp || b.createdAt || 0);
+    });
+
+  const positionIndex = sameQueue.findIndex((item) => item.id === activeBooking.id);
+  const position = positionIndex >= 0 ? positionIndex + 1 : 0;
+  const peopleAhead = Math.max(0, position - 1);
+
+  return {
+    position,
+    totalWaiting: peopleAhead,
+    estimatedTime: `${peopleAhead * 10} mins`,
+    connectionId: activeBooking.bookingId || activeBooking.id,
+    serviceName: activeBooking.serviceName,
+    status: activeBooking.status,
+    currentNumber: sameQueue[0]?.queueNumber || activeBooking.queueNumber || "A-000",
+    queueNumber: activeBooking.queueNumber,
+    tokenNumber: activeBooking.tokenNumber,
+    timeslot: activeBooking.timeslot,
+    date: activeBooking.date,
+    time: activeBooking.time,
+  };
+};
+
 app.get("/api/queue/:userId", async (req, res) => {
   try {
-    const snapshot = await db.ref("appointments").once("value");
-    const data = snapshot.val() || {};
-
-    const list = Object.entries(data)
-      .map(([id, v]) => ({ id, ...v }))
-      .filter((a) =>
-        ["upcoming", "pending", "confirmed", "processing"].includes(a.status)
-      )
-      .sort((a, b) => a.createdAt - b.createdAt);
-
-    let position = 0;
-
-    list.forEach((item, index) => {
-      if (item.userId === req.params.userId) {
-        position = index + 1;
-      }
-    });
-
-    res.json({
-      success: true,
-      data: {
-        position,
-        totalWaiting: list.length,
-      },
-    });
+    const data = await buildQueueResponse(req.params.userId);
+    res.json({ success: true, data });
   } catch (err) {
     console.error("❌ Error fetching queue:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/queue/refresh/:userId", async (req, res) => {
+  try {
+    const data = await buildQueueResponse(req.params.userId);
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error("❌ Error refreshing queue:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -382,25 +530,22 @@ app.get("/api/queue/stream/:userId", (req, res) => {
     Connection: "keep-alive",
   });
 
-  const ref = db.ref("appointments");
+  const refs = Object.values(SERVICE_CONFIG).map((config) => db.ref(config.node));
 
-  const listener = ref.on("value", (snapshot) => {
-    const data = snapshot.val() || {};
-    const list = Object.values(data);
+  const pushUpdate = async () => {
+    try {
+      const data = await buildQueueResponse(userId);
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    } catch (error) {
+      console.error("❌ Error streaming queue:", error);
+    }
+  };
 
-    let position = 0;
-
-    list.forEach((item, index) => {
-      if (item.userId === userId) {
-        position = index + 1;
-      }
-    });
-
-    res.write(`data: ${JSON.stringify({ position })}\n\n`);
-  });
+  refs.forEach((ref) => ref.on("value", pushUpdate));
+  pushUpdate();
 
   req.on("close", () => {
-    ref.off("value", listener);
+    refs.forEach((ref) => ref.off("value", pushUpdate));
   });
 });
 

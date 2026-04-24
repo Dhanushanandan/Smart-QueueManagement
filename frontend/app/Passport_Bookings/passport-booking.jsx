@@ -1,3 +1,5 @@
+/* eslint-disable react/display-name */
+import { auth } from "../../services/firebaseAuth";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
@@ -639,21 +641,22 @@ export default function PassportBooking() {
   useEffect(() => {
     const getUserId = async () => {
       try {
-        const storedUserId = await AsyncStorage.getItem("userId");
-        if (storedUserId) setUserId(storedUserId);
-        else if (params.userId) {
+        const currentUser = auth.currentUser;
+
+        if (currentUser?.uid) {
+          setUserId(currentUser.uid);
+          await AsyncStorage.setItem("userId", currentUser.uid);
+        } else if (params.userId) {
           setUserId(params.userId);
           await AsyncStorage.setItem("userId", params.userId);
         } else {
-          const tempId = `user_${Date.now()}`;
-          setUserId(tempId);
-          await AsyncStorage.setItem("userId", tempId);
+          Alert.alert("Error", "User not logged in");
         }
       } catch (error) {
-        const tempId = `user_${Date.now()}`;
-        setUserId(tempId);
+        Alert.alert("Error", "Unable to get logged in user");
       }
     };
+
     getUserId();
   }, []);
 
@@ -761,7 +764,17 @@ export default function PassportBooking() {
         `${API_BASE_URL}/passport-booking/recommended-slot/${userId}`,
       );
       const result = await response.json();
-      if (result.success && result.data) setRecommendedSlot(result.data);
+      if (result.success && result.data) {
+        setRecommendedSlot(result.data);
+        if (result.allSlots) {
+          setAvailableSlots(result.allSlots);
+        }
+        Alert.alert(
+          "🤖 Best Time Slot",
+          result.data.message ||
+            `AI recommends ${result.data.time} because it has the lowest predicted waiting time${result.data.predictedWaitMinutes ? ` (${result.data.predictedWaitMinutes} mins)` : ""}.`,
+        );
+      }
     } catch (error) {
       console.error("Error loading recommended slot:", error);
     }
@@ -769,8 +782,11 @@ export default function PassportBooking() {
 
   const loadAvailableSlots = async () => {
     try {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const targetDate = tomorrow.toISOString().split("T")[0];
       const response = await fetch(
-        `${API_BASE_URL}/passport-booking/available-slots`,
+        `${API_BASE_URL}/passport-booking/available-slots?date=${targetDate}`,
       );
       const result = await response.json();
       if (result.success && result.data) setAvailableSlots(result.data);
@@ -784,7 +800,7 @@ export default function PassportBooking() {
     setShowManualSlotPicker(false);
     Alert.alert(
       "✅ Time Slot Selected",
-      `You have selected: ${slot.time} on ${slot.date}`,
+      `You have selected: ${slot.time} on ${slot.date}${slot.predictedWaitMinutes ? `\nEstimated waiting time: ${slot.predictedWaitMinutes} mins` : ""}`,
     );
   };
 
@@ -903,6 +919,8 @@ export default function PassportBooking() {
         gender: form.gender,
         mobile: form.mobile,
         birthplace: form.birthplace?.trim() || "",
+        authUserId: userId,
+        authEmail: auth.currentUser?.email || "",
       };
 
       const response = await fetch(
@@ -1111,9 +1129,13 @@ export default function PassportBooking() {
           [
             {
               text: "View My Bookings",
-              onPress: () => router.push("/bookings"),
+              onPress: () =>
+                router.push({
+                  pathname: "/dashboard",
+                  params: { openBookings: "true", bookingTab: "ongoing" },
+                }),
             },
-            { text: "Done", style: "cancel" },
+            { text: "OK", onPress: () => router.push("/dashboard") },
           ],
         );
       } else {
