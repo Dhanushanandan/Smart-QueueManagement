@@ -1,139 +1,43 @@
 # 🚀 Smart Queue Management System (AI-Based)
 
-![React](https://img.shields.io/badge/Frontend-React-blue)
-![Node](https://img.shields.io/badge/Backend-Node.js-green)
-![Firebase](https://img.shields.io/badge/Database-Firebase-orange)
-![AI](https://img.shields.io/badge/AI-OCR-red)
-![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
+A modern AI-powered queue management application built using Agile Scrum methodology.
 
----
+## Overview
+This system replaces physical queues with a smart digital solution for booking appointments in government services such as NIC, Passport, and Driving License.
 
-## 📌 Overview
-The **Smart Queue Management System** is an AI-powered solution designed to eliminate physical queues and optimize appointment booking for government services such as **NIC, Passport, and Driving License**.
+## Features
+- OTP Login & Registration
+- Document Upload & OCR Extraction
+- AI-based Time Slot Recommendation
+- Appointment Booking & Token Generation
+- Admin & Teller Management
 
----
+## Tech Stack
+Frontend: React Native (Expo)
+Backend: Node.js + Express
+AI: Python (OCR)
+Database: Firebase
 
-## 🎯 Features
+## Setup
+1. Clone repo
+git clone https://github.com/Dhanushanandan/Smart-QueueManagement.git
 
-### 👤 User
-- Secure Login & Registration (OTP)
-- Upload Documents
-- AI OCR Extraction
-- Appointment Booking
-- Smart Time Slot Suggestions
-- Token Generation
-
-### 🏢 Admin
-- Manage Users & Services
-- Manage Appointments
-- View Reports
-
-### 🧑‍💼 Teller
-- View Queue
-- Call Tokens
-- Update Status
-
----
-
-## 🤖 AI Features
-- OCR Data Extraction
-- Document Type Detection
-- Smart Scheduling Algorithm
-
----
-
-## 🏗️ Architecture
-
-```
-Frontend (React Native)
-    ↓
-Backend (Node.js)
-    ↓
-AI Service (Python)
-    ↓
-Firebase Database
-```
-
----
-
-## 🛠️ Tech Stack
-
-- React Native (Expo)
-- Node.js + Express
-- Python (OCR)
-- Firebase
-
----
-
-## ⚙️ Setup
-
-```bash
-git clone https://github.com/your-repo.git
-cd project
-```
-
-### Frontend
-```bash
+2. Frontend
 cd frontend
 npm install
 npx expo start
-```
 
-### Backend
-```bash
+3. Backend
 cd backend
 npm install
 npm start
-```
 
-### AI Service
-```bash
+4. AI Service
 cd ai-service
 python app.py
-```
 
----
-
-## 📊 Agile (Scrum)
-
-- 4 Sprints Completed
-- Jira used for backlog & sprint tracking
-- Burndown & Velocity charts
-
-🔗 Jira: https://danushanandan7-1769003355725.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog
-
----
-
-## 🧪 Testing
-- Manual Testing
-- Selenium Testing
-- Validation Testing
-
----
-
-## 📷 Screenshots
-(Add your UI screenshots here)
-
----
-
-## ⚠️ Challenges
-- OCR accuracy
-- API integration
-- Git conflicts
-
----
-
-## 💡 Future Improvements
-- Push Notifications
-- Real-time Queue Tracking
-- Improved AI accuracy
-
----
-
-## 👨‍💻 Contributors
+## Contributors
 Group 16 – NIBM / Coventry University
 
----
-
-## 📜 License
+## License
 Academic Project
