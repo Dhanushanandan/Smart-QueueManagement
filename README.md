@@ -1,43 +1,76 @@
 # 🚀 Smart Queue Management System (AI-Based)
 
-A modern AI-powered queue management application built using Agile Scrum methodology.
+A modern AI-powered queue management application built as part of the Agile Development Coursework at NIBM.
 
 ## Overview
-This system replaces physical queues with a smart digital solution for booking appointments in government services such as NIC, Passport, and Driving License.
+The system replaces traditional physical queues in government services (NIC, Passport, Driving License) with a digital, intelligent appointment system powered by AI.
 
-## Features
+## Key Features
 - OTP Login & Registration
-- Document Upload & OCR Extraction
-- AI-based Time Slot Recommendation
-- Appointment Booking & Token Generation
-- Admin & Teller Management
+- Document Upload (NIC / Passport / Driving License)
+- AI OCR Extraction (Name, DOB, ID)
+- Automatic Validation
+- Appointment Booking
+- Smart Time Slot Recommendation
+- Token Generation
+- Dashboard & History
 
 ## Tech Stack
-Frontend: React Native (Expo)
-Backend: Node.js + Express
-AI: Python (OCR)
-Database: Firebase
+- React Native (Expo)
+- Node.js + Express
+- Python (AI / OCR)
+- Firebase Realtime Database
+- Firebase Authentication
+
+## Project Structure
+Smart-QueueManagement/
+├── frontend/
+├── backend/
+├── ai-service/
+├── assets/
+└── README.md
 
 ## Setup
-1. Clone repo
+
+### Clone
 git clone https://github.com/Dhanushanandan/Smart-QueueManagement.git
 
-2. Frontend
+### Frontend
 cd frontend
 npm install
 npx expo start
 
-3. Backend
+### Backend
 cd backend
 npm install
 npm start
 
-4. AI Service
+### AI Service
 cd ai-service
 python app.py
 
+## Agile (Scrum)
+- 4 Sprints Completed
+- Jira used for backlog and sprint tracking
+- Burndown & Velocity charts
+
+## Testing
+- Manual Testing
+- Selenium Testing
+
+## Challenges
+- OCR accuracy issues
+- Firebase data structure
+- API integration
+- Git conflicts
+
+## Improvements
+- Improve AI accuracy
+- Add push notifications
+- Real-time tracking
+
 ## Contributors
-Group 16 – NIBM / Coventry University
+Built by a team of 8 students from NIBM BSc (Hons) Computing, Batch 25.2 as part of the PDSA module coursework.(Group 16 – NIBM)
 
 ## License
-Academic Project
+This project is for academic purposes only.
