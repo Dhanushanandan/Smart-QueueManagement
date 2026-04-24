@@ -294,7 +294,9 @@ export default function UserDashboard() {
 
         const categorized = {
           ongoing: appointments.filter((apt) =>
-            ["upcoming", "pending", "confirmed", "processing"].includes(apt.status),
+            ["upcoming", "pending", "confirmed", "processing"].includes(
+              apt.status,
+            ),
           ),
           all: appointments,
         };
@@ -748,7 +750,7 @@ export default function UserDashboard() {
           >
             <Ionicons name="checkmark-done-circle" size={20} color="#1E3A8A" />
             <Text style={[styles.statCardNumber, { color: colors.text }]}>
-{bookingDetails.all?.length || 0}
+              {bookingDetails.all?.length || 0}
             </Text>
             <Text
               style={[styles.statCardLabel, { color: colors.textSecondary }]}
@@ -883,7 +885,9 @@ export default function UserDashboard() {
               >
                 <View style={styles.liveDot} />
                 <Text style={styles.liveText}>
-                  {queueStatus.currentNumber || queueStatus.queueNumber || "A-000"}
+                  {queueStatus.currentNumber ||
+                    queueStatus.queueNumber ||
+                    "A-000"}
                 </Text>
               </View>
             </View>
@@ -891,12 +895,22 @@ export default function UserDashboard() {
               {queueStatus.serviceName || "No Active Service"}
             </Text>
             {!!queueStatus.queueNumber && (
-              <Text style={[styles.queueHint, { color: colors.textSecondary, marginTop: 4 }]}> 
+              <Text
+                style={[
+                  styles.queueHint,
+                  { color: colors.textSecondary, marginTop: 4 },
+                ]}
+              >
                 Your Token: {queueStatus.queueNumber}
               </Text>
             )}
             {!!queueStatus.timeslot && (
-              <Text style={[styles.queueHint, { color: colors.textSecondary, marginTop: 2 }]}> 
+              <Text
+                style={[
+                  styles.queueHint,
+                  { color: colors.textSecondary, marginTop: 2 },
+                ]}
+              >
                 Slot: {queueStatus.timeslot}
               </Text>
             )}
@@ -1607,12 +1621,22 @@ export default function UserDashboard() {
                 {queueStatus.serviceName || "No Active Service"}
               </Text>
               {!!queueStatus.queueNumber && (
-                <Text style={[styles.queueCardTime, { color: colors.textSecondary }]}>
+                <Text
+                  style={[
+                    styles.queueCardTime,
+                    { color: colors.textSecondary },
+                  ]}
+                >
                   Your Token: {queueStatus.queueNumber}
                 </Text>
               )}
               {!!queueStatus.timeslot && (
-                <Text style={[styles.queueCardTime, { color: colors.textSecondary }]}>
+                <Text
+                  style={[
+                    styles.queueCardTime,
+                    { color: colors.textSecondary },
+                  ]}
+                >
                   Slot: {queueStatus.timeslot}
                 </Text>
               )}
@@ -1623,7 +1647,10 @@ export default function UserDashboard() {
               <Text
                 style={[styles.queueCardTime, { color: colors.textSecondary }]}
               >
-                Currently Serving: {queueStatus.currentNumber || queueStatus.queueNumber || "A-000"}
+                Currently Serving:{" "}
+                {queueStatus.currentNumber ||
+                  queueStatus.queueNumber ||
+                  "A-000"}
               </Text>
               <Text
                 style={[
