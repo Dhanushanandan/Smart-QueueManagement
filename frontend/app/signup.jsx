@@ -28,12 +28,8 @@ export default function SignupScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-<<<<<<< HEAD
-  const API_URL = "http://192.168.1.65:5000/api/auth";
-=======
   // const API_URL = 'http://192.168.251.40:5000/api';
   const API_URL = process.env.EXPO_PUBLIC_AUTH_API_URL;
->>>>>>> origin/main
 
   const handleSignup = async () => {
     if (
@@ -51,11 +47,6 @@ export default function SignupScreen() {
 
     if (password !== confirmPassword) {
       Alert.alert("Error", "Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }
 
@@ -171,17 +162,12 @@ export default function SignupScreen() {
 
   return (
     <ScrollView testID="signupScreen" contentContainerStyle={styles.container}>
-<<<<<<< HEAD
-      <Text testID="signupLogo" style={styles.logo}>SmartQueue</Text>
-      <Text testID="signupTitle" style={styles.title}>Register</Text>
-=======
       <Text testID="signupLogo" style={styles.logo}>
         SmartQueue
       </Text>
       <Text testID="signupTitle" style={styles.title}>
         Register
       </Text>
->>>>>>> origin/main
       <Text style={styles.subtitle}>Create your account</Text>
 
       <TextInput
@@ -205,7 +191,7 @@ export default function SignupScreen() {
       <TextInput
         testID="dobInput"
         style={styles.input}
-        placeholder="Date of Birth (DD/MM/YYYY)"
+        placeholder="Date of Birth"
         placeholderTextColor={COLORS.gray}
         value={dob}
         onChangeText={setDob}

@@ -31,13 +31,10 @@ router.get('/recommended-slot/:userId', (req, res) =>
   nicBookingController.getRecommendedTimeSlot(req, res)
 );
 
-<<<<<<< HEAD
-=======
 router.get('/available-slots', (req, res) => 
   nicBookingController.getAvailableSlots(req, res)
 );
 
->>>>>>> origin/main
 router.get('/temp-data/:userId', (req, res) => 
   nicBookingController.getTempBookingData(req, res)
 );
