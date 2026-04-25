@@ -3,6 +3,8 @@
 # dependencies
 node_modules/
 
+Smart-QueueManagement.iml
+
 # Expo
 .expo/
 dist/
@@ -44,3 +46,17 @@ app-example
 
 
 backend/serviceAccountKey.json
+/.idea/modules.xml
+/.idea/vcs.xml
+
+
+node_modules/
+.env
+.expo/
+dist/
+build/
+ai-service/.venv/
+__pycache__/
+backend/serviceAccountKey.json
+backend/service-account.json
+*.zip

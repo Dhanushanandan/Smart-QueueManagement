@@ -1,50 +1,131 @@
-# Welcome to your Expo app 👋
+# 🚀 Smart Queue Management System (AI-Based)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+<p align="center">
+  <img src="https://img.shields.io/badge/Frontend-React%20Native-blue?style=for-the-badge&logo=react" />
+  <img src="https://img.shields.io/badge/Backend-Node.js-green?style=for-the-badge&logo=node.js" />
+  <img src="https://img.shields.io/badge/AI-Python%20OCR-red?style=for-the-badge&logo=python" />
+  <img src="https://img.shields.io/badge/Database-Firebase-orange?style=for-the-badge&logo=firebase" />
+  <img src="https://img.shields.io/badge/Agile-Scrum-purple?style=for-the-badge&logo=jira" />
+</p>
 
-## Get started
+---
 
-1. Install dependencies
+## 📌 Overview
+A modern **AI-powered queue management application** that replaces traditional physical queues in government services such as **NIC, Passport, and Driving License** with a **smart digital system**.
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## ✨ Key Features
 
-   ```bash
-   npx expo start
-   ```
+- 🔐 OTP Login & Secure Registration  
+- 📄 Document Upload (NIC / Passport / License)  
+- 🤖 AI OCR Extraction (Name, DOB, ID)  
+- ✅ Automatic Data Validation  
+- 📅 Appointment Booking System  
+- 🧠 Smart Time Slot Recommendation  
+- 🎟 Token Generation  
+- 📊 User Dashboard & History  
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🛠️ Tech Stack
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+| Layer | Technology |
+|------|----------|
+| 📱 Frontend | React Native (Expo) |
+| ⚙️ Backend | Node.js + Express |
+| 🤖 AI | Python (OCR / ML) |
+| 🗄️ Database | Firebase Realtime DB |
+| 🔐 Auth | Firebase Authentication |
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## 📂 Project Structure
 
-```bash
-npm run reset-project
+```
+Smart-QueueManagement/
+├── 📁 frontend/
+├── 📁 backend/
+├── 📁 ai-service/
+├── 📁 assets/
+└── 📄 README.md
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## ⚙️ Setup Guide
 
-To learn more about developing your project with Expo, look at the following resources:
+### 🔽 Clone Repository
+```bash
+git clone https://github.com/Dhanushanandan/Smart-QueueManagement.git
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 📱 Frontend
+```bash
+cd frontend
+npm install
+npx expo start
+```
 
-## Join the community
+### ⚙️ Backend
+```bash
+cd backend
+npm install
+npm start
+```
 
-Join our community of developers creating universal apps.
+### 🤖 AI Service
+```bash
+cd ai-service
+python app.py
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## 📊 Agile Development (Scrum)
+
+- 📌 4 Sprints Completed  
+- 📋 Managed using Jira  
+- 📈 Burndown & Velocity Charts  
+- 👥 Team Collaboration  
+
+---
+
+## 🧪 Testing
+
+- ✅ Manual Testing  
+- 🤖 Selenium Automation Testing  
+
+---
+
+## ⚠️ Challenges
+
+- OCR accuracy issues  
+- Firebase data modeling  
+- API integration errors  
+- Git merge conflicts  
+
+---
+
+## 💡 Future Improvements
+
+- 🚀 Improve AI accuracy  
+- 🔔 Push Notifications  
+- 📡 Real-time Queue Tracking  
+- 🎨 UI/UX Enhancements  
+
+---
+
+## 👨‍💻 Contributors
+
+Built by **Group 16 – NIBM BSc (Hons) Computing (Batch 25.2)**  
+
+---
+
+## 📜 License
+
+📚 Academic Project – For educational purposes only  
+
+---
+
+<p align="center">✨ Made with dedication using Agile & AI ✨</p>
