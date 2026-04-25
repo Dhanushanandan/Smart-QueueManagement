@@ -1,1 +1,0 @@
-export { getFirebaseAuth } from './firebase.auth.native';
